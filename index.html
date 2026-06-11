@@ -2750,9 +2750,7 @@ function saveActiveProject(proj){
       const projs2=getProjects();
       const idx2=projs2.findIndex(p=>p.id===proj.id);
       if(idx2>=0){
-        const d2=currentProjectData();
-        // Drop bgImageData if too large for localStorage
-        if(JSON.stringify(d2).length>4*1024*1024)d2.bgImageData=null;
+        const d2=currentProjectData(false); // No bgImage on auto-save
         projs2[idx2].data=d2;
         saveProjects(projs2);
       }
@@ -4826,11 +4824,11 @@ setTimeout(()=>updateNozzleList(), 200);
 function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')||'[]');}catch{return[];}}
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));}
 
-function currentProjectData(){
+function currentProjectData(includeBg){
   const proj=getProjects().find(function(p){return p.id===activeProjectId;})||{};
   var bgData=null;
-  // Save background image as compressed JPEG if available
-  if(bgImage&&pc){
+  // Only encode bgImage when explicitly requested (e.g. saveToProject, not on every checkbox)
+  if(includeBg&&bgImage&&pc){
     try{
       var tmpC=document.createElement('canvas');
       tmpC.width=canvasW;tmpC.height=canvasH;
@@ -5291,11 +5289,10 @@ function newProject(){
 }
 function saveToProject(id){
   const projs=getProjects();const idx=projs.findIndex(p=>p.id===id);if(idx<0)return;
-  const data=currentProjectData();
+  const data=currentProjectData(true); // Include bgImage
   // Check size - if bgImageData makes it too large, drop it with warning
   const dataStr=JSON.stringify(data);
   if(dataStr.length>4*1024*1024){
-    // Try without bgImageData
     data.bgImageData=null;
     const dataStrSmall=JSON.stringify(data);
     if(dataStrSmall.length>4*1024*1024){
