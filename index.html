@@ -2744,11 +2744,16 @@ function saveActiveProject(proj){
   const idx=projs.findIndex(p=>p.id===proj.id);
   if(idx>=0){
     projs[idx]=proj;
-    // Also update proj.data with latest canvas + project data if this is active project
+    saveProjects(projs); // Save proj first so currentProjectData() reads updated values
+    // Now sync proj.data with latest state
     if(proj.id===activeProjectId){
-      projs[idx].data=currentProjectData();
+      const projs2=getProjects();
+      const idx2=projs2.findIndex(p=>p.id===proj.id);
+      if(idx2>=0){
+        projs2[idx2].data=currentProjectData();
+        saveProjects(projs2);
+      }
     }
-    saveProjects(projs);
   }
 }
 
@@ -3643,8 +3648,7 @@ function generateOfferte(){
   localStorage.setItem('bw_last_client',JSON.stringify({klant:klant,ref:ref}));
   var proj=getActiveProject();
   var uren=proj?proj.uren||{}:{};
-  var extra=proj?proj.extraMat||[]:[]; 
-  var verpl=proj?proj.verplaatsingen||{aantal:0,km:0}:{aantal:0,km:0};
+    var extra=proj?(proj.extraMat||proj.data&&proj.data.extraMat||[]):[];proj?proj.verplaatsingen||{aantal:0,km:0}:{aantal:0,km:0};
   var meds=loadMedewerkers();
   var vt=loadVerplaatsing();
   var stored=loadCatalogPrices();
