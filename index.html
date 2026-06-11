@@ -2739,7 +2739,18 @@ function saveMedewerkers(m){localStorage.setItem('bw_medewerkers',JSON.stringify
 function loadVerplaatsing(){try{return JSON.parse(localStorage.getItem('bw_verplaatsing')||'null')||{voorrijdkost:0,kmvergoeding:0};}catch{return {voorrijdkost:0,kmvergoeding:0};}}
 function saveVerplaatsing(v){localStorage.setItem('bw_verplaatsing',JSON.stringify(v));}
 function getActiveProject(){if(!activeProjectId)return null;return getProjects().find(p=>p.id===activeProjectId)||null;}
-function saveActiveProject(proj){const projs=getProjects();const idx=projs.findIndex(p=>p.id===proj.id);if(idx>=0){projs[idx]=proj;saveProjects(projs);}}
+function saveActiveProject(proj){
+  const projs=getProjects();
+  const idx=projs.findIndex(p=>p.id===proj.id);
+  if(idx>=0){
+    projs[idx]=proj;
+    // Also update proj.data with latest canvas + project data if this is active project
+    if(proj.id===activeProjectId){
+      projs[idx].data=currentProjectData();
+    }
+    saveProjects(projs);
+  }
+}
 
 
 // ── EIGEN ARTIKELEN ──
@@ -3255,14 +3266,11 @@ function openOfferte(){
   window._activeOfferteTab='intern';
   var d=new Date();
   var di=document.getElementById('off-datum');if(di)di.value=d.toISOString().split('T')[0];
-  // Read klant from active project (not localStorage)
+  // Read klant from active project data
   try{
     var proj=getProjects().find(function(p){return p.id===activeProjectId;});
-    var klantNaam=proj&&proj.klant?proj.klant.naam||proj.klant.bedrijf||'':'';
-    if(!klantNaam){// fallback to localStorage
-      var c=JSON.parse(localStorage.getItem('bw_last_client')||'{}');
-      klantNaam=c.klant||'';
-    }
+    var projKlant=proj&&proj.klant?proj.klant:(proj&&proj.data&&proj.data.klant?proj.data.klant:{});
+    var klantNaam=projKlant.naam||projKlant.bedrijf||'';
     if(klantNaam&&document.getElementById('off-klant'))document.getElementById('off-klant').value=klantNaam;
   }catch{}
   document.getElementById('ov').style.display='block';
@@ -4801,31 +4809,43 @@ setTimeout(()=>updateNozzleList(), 200);
 function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')||'[]');}catch{return[];}}
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));}
 
-function currentProjectData(projId){
-  // Save cables, extraMat, uren, verplaatsingen from specified or active project
-  const pid=projId||activeProjectId;
-  const proj=getProjects().find(function(p){return p.id===pid;});
+function currentProjectData(){
+  // Everything in one place - always read from active project
+  const proj=getProjects().find(function(p){return p.id===activeProjectId;})||{};
   return{
-    elements,pipes,cables:cables||[],textNotes,plantZones,pxPerMeter,prices,counter,
-    extraMat:proj?proj.extraMat||[]:[],
-    uren:proj?proj.uren||{}:{},
-    verplaatsingen:proj?proj.verplaatsingen||{aantal:0,km:0}:{aantal:0,km:0},
-    klant:proj?proj.klant||{}:{},
+    elements:elements||[],
+    pipes:pipes||[],
+    cables:cables||[],
+    textNotes:textNotes||[],
+    plantZones:plantZones||[],
+    pxPerMeter:pxPerMeter||100,
+    prices:prices||{},
+    counter:counter||{},
+    extraMat:proj.extraMat||[],
+    uren:proj.uren||{},
+    verplaatsingen:proj.verplaatsingen||{aantal:0,km:0},
+    klant:proj.klant||{},
     savedAt:new Date().toISOString()
   };
 }
 function loadProjectData(d){
-  elements=d.elements||[];pipes=d.pipes||[];cables=d.cables||[];textNotes=d.textNotes||[];
-  plantZones=d.plantZones||[];pxPerMeter=d.pxPerMeter||100;
-  prices=d.prices||{};counter=d.counter||{};
-  // Restore extraMat, uren, verplaatsingen, klant onto active project
+  // Restore canvas data
+  elements=d.elements||[];
+  pipes=d.pipes||[];
+  cables=d.cables||[];
+  textNotes=d.textNotes||[];
+  plantZones=d.plantZones||[];
+  pxPerMeter=d.pxPerMeter||100;
+  prices=d.prices||{};
+  counter=d.counter||{};
+  // Restore project-level data onto active project object
   const projs=getProjects();
   const idx=projs.findIndex(function(p){return p.id===activeProjectId;});
   if(idx>=0){
     projs[idx].extraMat=d.extraMat||[];
     projs[idx].uren=d.uren||{};
     projs[idx].verplaatsingen=d.verplaatsingen||{aantal:0,km:0};
-    projs[idx].klant=d.klant||{};
+    if(d.klant&&Object.keys(d.klant).length>0)projs[idx].klant=d.klant;
     saveProjects(projs);
   }
   document.getElementById('scale-display').textContent=`1m = ${Math.round(pxPerMeter)}px`;
@@ -5232,7 +5252,7 @@ function newProject(){
 }
 function saveToProject(id){
   const projs=getProjects();const idx=projs.findIndex(p=>p.id===id);if(idx<0)return;
-  projs[idx].data=currentProjectData(id);projs[idx].savedAt=new Date().toISOString();
+  projs[idx].data=currentProjectData();projs[idx].savedAt=new Date().toISOString();
   saveProjects(projs);activeProjectId=id;renderProjectPanel();
   let t=document.getElementById('save-toast');
   if(!t){t=document.createElement('div');t.id='save-toast';
@@ -5245,32 +5265,16 @@ function openProject(id){
   const projs=getProjects();
   const proj=projs.find(function(p){return p.id===id;});
   if(!proj){showToast('Project niet gevonden','#dc2626');return;}
-  if(!proj.data){showToast('Geen data in project','#dc2626');return;}
-  // Set activeProjectId FIRST so loadProjectData can reference it
+  // Set activeProjectId FIRST
   activeProjectId=id;
-  loadProjectData(proj.data);
-  // Also restore fields stored directly on proj (for backward compatibility)
-  const idx2=getProjects().findIndex(function(p){return p.id===id;});
-  if(idx2>=0){
-    const p2=getProjects()[idx2];
-    // If proj.data had extraMat, it was already restored by loadProjectData
-    // But if not (old project), restore from proj directly
-    if(!proj.data.extraMat&&p2.extraMat){
-      const projs2=getProjects();
-      projs2[idx2].extraMat=p2.extraMat;
-      saveProjects(projs2);
-    }
-    if(!proj.data.uren&&p2.uren){
-      const projs2=getProjects();
-      projs2[idx2].uren=p2.uren;
-      saveProjects(projs2);
-    }
-    if(!proj.data.klant&&p2.klant){
-      const projs2=getProjects();
-      projs2[idx2].klant=p2.klant;
-      saveProjects(projs2);
-    }
-  }
+  // Load data (creates empty data if none exists)
+  const data=proj.data||{};
+  // Backward compat: if extraMat/uren/klant were on proj directly, migrate to data
+  if(!data.extraMat&&proj.extraMat)data.extraMat=proj.extraMat;
+  if(!data.uren&&proj.uren)data.uren=proj.uren;
+  if(!data.verplaatsingen&&proj.verplaatsingen)data.verplaatsingen=proj.verplaatsingen;
+  if(!data.klant&&proj.klant)data.klant=proj.klant;
+  loadProjectData(data);
   closeAll();
   showToast('Project geladen: '+proj.name,'#16a34a');
 }
