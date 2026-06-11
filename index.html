@@ -3189,10 +3189,10 @@ function buildExtraMatSection(extra){
     var ex=extra.find(function(e){return e.id===item.id;})||{checked:false,aantal:0};
     if(item.cat!==prevCat){html+='<div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;padding:6px 4px 2px" class="ecat">'+item.cat+'</div>';prevCat=item.cat;}
     html+='<div style="display:flex;align-items:center;gap:8px;padding:3px 4px;border-bottom:1px solid var(--bor2);font-size:12px" class="eitem" data-s="'+item.omschrijving.toLowerCase()+' '+item.id.toLowerCase()+'">'
-      +'<input type="checkbox"'+((ex.checked||ex.aantal>0)?' checked':'')+'style="cursor:pointer" onchange="toggleExtraMat(="toggleExtraMat(\''+item.id+'\',this.checked)">'
+      +'<input type="checkbox" id="em-chk-'+item.id+'"'+((ex.checked||ex.aantal>0)?' checked ':'')+'style="cursor:pointer" onchange="toggleExtraMat(\''+item.id+'\',this.checked)">'
       +'<span style="flex:1">'+item.omschrijving+' <span style="color:var(--tx2);font-size:10px">['+item.id+']</span></span>'
       +'<span style="color:var(--tx2);font-size:10px;width:30px">'+item.eenh+'</span>'
-      +'<input type="number" min="0" step="1" value="'+(ex.aantal||'')+'" placeholder="0" style="width:55px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:12px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updateExtraAantal(\''+item.id+'\',this.value)">'
+      +'<input type="number" id="em-aantal-'+item.id+'" min="0" step="1" value="'+(ex.aantal||0)+'" placeholder="0" style="width:55px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:12px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updateExtraAantal(\''+item.id+'\',this.value)">'
       +'</div>';
   });
   html+='</div></div>';
@@ -3306,7 +3306,7 @@ function buildKlantOfferteBlokken(){
   var d=getMaterialData();
   var stored=loadCatalogPrices();
   var proj=getActiveProject()?getProjects().find(function(p){return p.id===activeProjectId;}):null;
-  var uren=proj?proj.uren||{}:{};
+  var uren=proj?(proj.uren||(proj.data&&proj.data.uren)||{}):{};
   var meds=loadMedewerkers();
   var vt=loadVerplaatsing();
   var verpl=proj?proj.verplaatsingen||{aantal:0,km:0}:{aantal:0,km:0};
@@ -3659,7 +3659,8 @@ function generateOfferte(){
   localStorage.setItem('bw_last_client',JSON.stringify({klant:klant,ref:ref}));
   var proj=getActiveProject();
   var uren=proj?proj.uren||{}:{};
-    var extra=proj?(proj.extraMat||proj.data&&proj.data.extraMat||[]):[];proj?proj.verplaatsingen||{aantal:0,km:0}:{aantal:0,km:0};
+  var extra=proj?(proj.extraMat||(proj.data&&proj.data.extraMat)||[]):[];
+  var verpl=proj?(proj.verplaatsingen||(proj.data&&proj.data.verplaatsingen)||{aantal:0,km:0}):{aantal:0,km:0};
   var meds=loadMedewerkers();
   var vt=loadVerplaatsing();
   var stored=loadCatalogPrices();
