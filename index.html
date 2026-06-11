@@ -4777,12 +4777,31 @@ function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));}
 
 function currentProjectData(){
-  return{elements,pipes,textNotes,plantZones,pxPerMeter,prices,counter,savedAt:new Date().toISOString()};
+  // Also save cables, extraMat, uren, verplaatsingen from active project
+  const proj=getProjects().find(function(p){return p.id===activeProjectId;});
+  return{
+    elements,pipes,cables:cables||[],textNotes,plantZones,pxPerMeter,prices,counter,
+    extraMat:proj?proj.extraMat||[]:[],
+    uren:proj?proj.uren||{}:{},
+    verplaatsingen:proj?proj.verplaatsingen||{aantal:0,km:0}:{aantal:0,km:0},
+    klant:proj?proj.klant||{}:{},
+    savedAt:new Date().toISOString()
+  };
 }
 function loadProjectData(d){
   elements=d.elements||[];pipes=d.pipes||[];cables=d.cables||[];textNotes=d.textNotes||[];
   plantZones=d.plantZones||[];pxPerMeter=d.pxPerMeter||100;
   prices=d.prices||{};counter=d.counter||{};
+  // Restore extraMat, uren, verplaatsingen, klant onto active project
+  const projs=getProjects();
+  const idx=projs.findIndex(function(p){return p.id===activeProjectId;});
+  if(idx>=0){
+    projs[idx].extraMat=d.extraMat||[];
+    projs[idx].uren=d.uren||{};
+    projs[idx].verplaatsingen=d.verplaatsingen||{aantal:0,km:0};
+    projs[idx].klant=d.klant||{};
+    saveProjects(projs);
+  }
   document.getElementById('scale-display').textContent=`1m = ${Math.round(pxPerMeter)}px`;
   updateCounts();redraw();selEl=null;updateSelPanel();
   // Show hint to reload background image
