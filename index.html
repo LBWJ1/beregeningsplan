@@ -6032,7 +6032,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'bw-editor-v2';
+    const CACHE = 'bw-editor-v3';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
@@ -6052,6 +6052,10 @@ if('serviceWorker' in navigator){
   const swBlob = new Blob([swCode], {type:'application/javascript'});
   const swUrl = URL.createObjectURL(swBlob);
   navigator.serviceWorker.register(swUrl, {scope:'./'}).catch(()=>{});
+    // Force reload if new SW is waiting
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(!window._swReloading){window._swReloading=true;window.location.reload();}
+    });
 }
 </script>
 <script>
