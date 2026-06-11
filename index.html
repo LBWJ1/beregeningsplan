@@ -151,7 +151,7 @@ button.ub.pri:hover{background:#1250a0}
   <div class="tg" style="position:relative">
     <button class="b" id="pipe-panel-btn" onclick="togglePipePanel()" title="Leidingopties">— Leiding ▾</button>
     <input type="color" id="pipe-color" value="#1050a0" style="width:36px;height:24px;cursor:pointer;border:1px solid var(--bor2);border-radius:4px;padding:1px"><input type="range" id="pipe-alpha" min="0" max="100" value="100" title="Transparantie" style="width:50px;height:14px;cursor:pointer" style="display:none">
-    <select id="pipe-dia" style="display:none"><option value="16">16</option><option value="25" selected>25</option><option value="32">32</option><option value="40">40</option><option value="50">50</option></select>
+    <select id="pipe-dia" style="display:none"><option value="16">Ø16</option><option value="25" selected>Ø25</option><option value="32">Ø32</option><option value="40">Ø40</option><option value="50">Ø50</option><option value="wb110">Wachtbuis Ø110 PVC</option><option value="wb90">Wachtbuis Ø90 PVC</option><option value="wb50f">Wachtbuis Ø50 flex</option></select>
     <select id="pipe-style" style="display:none"><option value="straight">Recht</option><option value="free">Vrij</option></select>
     <div id="pipe-panel" onmousedown="event.stopPropagation()" style="display:none;position:absolute;top:36px;left:0;background:var(--sur);border:1px solid var(--bor2);border-radius:var(--r);padding:12px;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:260px">
       <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Stijl</div>
@@ -3119,7 +3119,14 @@ function buildIngetekendSection(){
   if(Object.keys(pipeByDia).length){
     html+='<b style="font-size:11px;display:block;margin-bottom:4px">Leidingen</b>';
     html+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px"><thead><tr style="border-bottom:1px solid var(--bor2)"><th style="text-align:left;padding:4px 6px">Diameter</th><th style="text-align:right;padding:4px 6px">Meter</th></tr></thead><tbody>';
-    Object.keys(pipeByDia).sort().forEach(function(k){html+='<tr style="border-bottom:1px solid var(--bor2)"><td style="padding:4px 6px">PE '+k.replace('pipe','')+'mm</td><td style="text-align:right;padding:4px 6px;font-weight:700">'+Math.ceil(pipeByDia[k])+'m</td></tr>';});
+    Object.keys(pipeByDia).sort().forEach(function(k){
+    var naam;
+    if(k==='wb110')naam='Wachtbuis Ø110 PVC';
+    else if(k==='wb90')naam='Wachtbuis Ø90 PVC';
+    else if(k==='wb50f')naam='Wachtbuis Ø50 flex';
+    else naam='PE '+k.replace('pipe','')+'mm';
+    html+='<tr style="border-bottom:1px solid var(--bor2)"><td style="padding:4px 6px">'+naam+'</td><td style="text-align:right;padding:4px 6px;font-weight:700">'+Math.ceil(pipeByDia[k])+'m</td></tr>';
+  });
     html+='</tbody></table>';
   }
   // Druppeldarm
@@ -3242,7 +3249,16 @@ function openOfferte(){
   window._activeOfferteTab='intern';
   var d=new Date();
   var di=document.getElementById('off-datum');if(di)di.value=d.toISOString().split('T')[0];
-  try{var c=JSON.parse(localStorage.getItem('bw_last_client')||'{}');if(c.klant&&document.getElementById('off-klant'))document.getElementById('off-klant').value=c.klant;}catch{}
+  // Read klant from active project (not localStorage)
+  try{
+    var proj=getProjects().find(function(p){return p.id===activeProjectId;});
+    var klantNaam=proj&&proj.klant?proj.klant.naam||proj.klant.bedrijf||'':'';
+    if(!klantNaam){// fallback to localStorage
+      var c=JSON.parse(localStorage.getItem('bw_last_client')||'{}');
+      klantNaam=c.klant||'';
+    }
+    if(klantNaam&&document.getElementById('off-klant'))document.getElementById('off-klant').value=klantNaam;
+  }catch{}
   document.getElementById('ov').style.display='block';
   document.getElementById('offerte-panel').classList.add('open');
   // Reset tab styling
@@ -3873,7 +3889,10 @@ function getMaterialData(){
     }
   });
   const pipeByDia={},cableByType={};
-  pipes.forEach(p=>{const k='pipe'+p.dia;pipeByDia[k]=(pipeByDia[k]||0)+(p.len||0);});
+  pipes.forEach(p=>{
+    const k=String(p.dia).startsWith('wb')?p.dia:('pipe'+p.dia);
+    pipeByDia[k]=(pipeByDia[k]||0)+(p.len||0);
+  });
   const zones=[...plantZones];
   cables.forEach(function(c){
     const k='cable'+c.kabelType;
@@ -4776,9 +4795,10 @@ setTimeout(()=>updateNozzleList(), 200);
 function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')||'[]');}catch{return[];}}
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));}
 
-function currentProjectData(){
-  // Also save cables, extraMat, uren, verplaatsingen from active project
-  const proj=getProjects().find(function(p){return p.id===activeProjectId;});
+function currentProjectData(projId){
+  // Save cables, extraMat, uren, verplaatsingen from specified or active project
+  const pid=projId||activeProjectId;
+  const proj=getProjects().find(function(p){return p.id===pid;});
   return{
     elements,pipes,cables:cables||[],textNotes,plantZones,pxPerMeter,prices,counter,
     extraMat:proj?proj.extraMat||[]:[],
@@ -5206,7 +5226,7 @@ function newProject(){
 }
 function saveToProject(id){
   const projs=getProjects();const idx=projs.findIndex(p=>p.id===id);if(idx<0)return;
-  projs[idx].data=currentProjectData();projs[idx].savedAt=new Date().toISOString();
+  projs[idx].data=currentProjectData(id);projs[idx].savedAt=new Date().toISOString();
   saveProjects(projs);activeProjectId=id;renderProjectPanel();
   let t=document.getElementById('save-toast');
   if(!t){t=document.createElement('div');t.id='save-toast';
@@ -5220,8 +5240,31 @@ function openProject(id){
   const proj=projs.find(function(p){return p.id===id;});
   if(!proj){showToast('Project niet gevonden','#dc2626');return;}
   if(!proj.data){showToast('Geen data in project','#dc2626');return;}
-  loadProjectData(proj.data);
+  // Set activeProjectId FIRST so loadProjectData can reference it
   activeProjectId=id;
+  loadProjectData(proj.data);
+  // Also restore fields stored directly on proj (for backward compatibility)
+  const idx2=getProjects().findIndex(function(p){return p.id===id;});
+  if(idx2>=0){
+    const p2=getProjects()[idx2];
+    // If proj.data had extraMat, it was already restored by loadProjectData
+    // But if not (old project), restore from proj directly
+    if(!proj.data.extraMat&&p2.extraMat){
+      const projs2=getProjects();
+      projs2[idx2].extraMat=p2.extraMat;
+      saveProjects(projs2);
+    }
+    if(!proj.data.uren&&p2.uren){
+      const projs2=getProjects();
+      projs2[idx2].uren=p2.uren;
+      saveProjects(projs2);
+    }
+    if(!proj.data.klant&&p2.klant){
+      const projs2=getProjects();
+      projs2[idx2].klant=p2.klant;
+      saveProjects(projs2);
+    }
+  }
   closeAll();
   showToast('Project geladen: '+proj.name,'#16a34a');
 }
