@@ -2750,7 +2750,10 @@ function saveActiveProject(proj){
       const projs2=getProjects();
       const idx2=projs2.findIndex(p=>p.id===proj.id);
       if(idx2>=0){
-        projs2[idx2].data=currentProjectData();
+        const d2=currentProjectData();
+        // Drop bgImageData if too large for localStorage
+        if(JSON.stringify(d2).length>4*1024*1024)d2.bgImageData=null;
+        projs2[idx2].data=d2;
         saveProjects(projs2);
       }
     }
@@ -3188,7 +3191,7 @@ function buildExtraMatSection(extra){
     var ex=extra.find(function(e){return e.id===item.id;})||{checked:false,aantal:0};
     if(item.cat!==prevCat){html+='<div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;padding:6px 4px 2px" class="ecat">'+item.cat+'</div>';prevCat=item.cat;}
     html+='<div style="display:flex;align-items:center;gap:8px;padding:3px 4px;border-bottom:1px solid var(--bor2);font-size:12px" class="eitem" data-s="'+item.omschrijving.toLowerCase()+' '+item.id.toLowerCase()+'">'
-      +'<input type="checkbox"'+(ex.checked?' checked':'')+'style="cursor:pointer" onchange="toggleExtraMat(\''+item.id+'\',this.checked)">'
+      +'<input type="checkbox"'+((ex.checked||ex.aantal>0)?' checked':'')+'style="cursor:pointer" onchange="toggleExtraMat(="toggleExtraMat(\''+item.id+'\',this.checked)">'
       +'<span style="flex:1">'+item.omschrijving+' <span style="color:var(--tx2);font-size:10px">['+item.id+']</span></span>'
       +'<span style="color:var(--tx2);font-size:10px;width:30px">'+item.eenh+'</span>'
       +'<input type="number" min="0" step="1" value="'+(ex.aantal||'')+'" placeholder="0" style="width:55px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:12px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updateExtraAantal(\''+item.id+'\',this.value)">'
@@ -3207,8 +3210,18 @@ function toggleExtraMat(id,checked){
   var proj=getActiveProject();if(!proj)return;
   if(!proj.extraMat)proj.extraMat=[];
   var ex=proj.extraMat.find(function(e){return e.id===id;});
-  if(ex)ex.checked=checked;else proj.extraMat.push({id:id,checked:checked,aantal:0});
+  if(ex){
+    ex.checked=checked;
+    // Aanvinken → aantal naar 1 als nog 0; uitvinken → aantal naar 0
+    if(checked&&(!ex.aantal||ex.aantal===0))ex.aantal=1;
+    if(!checked)ex.aantal=0;
+  } else {
+    proj.extraMat.push({id:id,checked:checked,aantal:checked?1:0});
+  }
   saveActiveProject(proj);
+  // Update het aantalveld in de UI
+  var aantalEl=document.getElementById('em-aantal-'+id);
+  if(aantalEl){aantalEl.value=checked?1:0;}
 }
 
 function updateExtraAantal(id,val){
@@ -4814,8 +4827,20 @@ function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));}
 
 function currentProjectData(){
-  // Everything in one place - always read from active project
   const proj=getProjects().find(function(p){return p.id===activeProjectId;})||{};
+  var bgData=null;
+  // Save background image as compressed JPEG if available
+  if(bgImage&&pc){
+    try{
+      var tmpC=document.createElement('canvas');
+      tmpC.width=canvasW;tmpC.height=canvasH;
+      var tmpCtx2=tmpC.getContext('2d');
+      tmpCtx2.fillStyle='#ffffff';
+      tmpCtx2.fillRect(0,0,canvasW,canvasH);
+      tmpCtx2.putImageData(bgImage,0,0);
+      bgData=tmpC.toDataURL('image/jpeg',0.9);
+    }catch(e){}
+  }
   return{
     elements:elements||[],
     pipes:pipes||[],
@@ -4829,6 +4854,7 @@ function currentProjectData(){
     uren:proj.uren||{},
     verplaatsingen:proj.verplaatsingen||{aantal:0,km:0},
     klant:proj.klant||{},
+    bgImageData:bgData,
     savedAt:new Date().toISOString()
   };
 }
@@ -4854,8 +4880,17 @@ function loadProjectData(d){
   }
   document.getElementById('scale-display').textContent=`1m = ${Math.round(pxPerMeter)}px`;
   updateCounts();redraw();selEl=null;updateSelPanel();
-  // Show hint to reload background image
-  if(!bgImage){
+  // Restore background image if saved with project
+  if(d.bgImageData){
+    const img=new Image();
+    img.onload=function(){
+      initCanvas(img.width,img.height);
+      pdfCtx.drawImage(img,0,0,img.width,img.height);
+      bgImage=pdfCtx.getImageData(0,0,canvasW,canvasH);
+      redraw();
+    };
+    img.src=d.bgImageData;
+  } else if(!bgImage){
     const hint=document.createElement('div');
     hint.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#1e3a8a;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.3)';
     hint.textContent='📄 Projectdata geladen — laad het grondplan opnieuw via "Bestand kiezen"';
@@ -5256,7 +5291,20 @@ function newProject(){
 }
 function saveToProject(id){
   const projs=getProjects();const idx=projs.findIndex(p=>p.id===id);if(idx<0)return;
-  projs[idx].data=currentProjectData();projs[idx].savedAt=new Date().toISOString();
+  const data=currentProjectData();
+  // Check size - if bgImageData makes it too large, drop it with warning
+  const dataStr=JSON.stringify(data);
+  if(dataStr.length>4*1024*1024){
+    // Try without bgImageData
+    data.bgImageData=null;
+    const dataStrSmall=JSON.stringify(data);
+    if(dataStrSmall.length>4*1024*1024){
+      showToast('Project te groot voor opslag — sla op als .bwp bestand','#dc2626');
+      return;
+    }
+    showToast('Grondplan te groot — wordt apart geladen bij heropenen','#f59e0b');
+  }
+  projs[idx].data=data;projs[idx].savedAt=new Date().toISOString();
   saveProjects(projs);activeProjectId=id;renderProjectPanel();
   let t=document.getElementById('save-toast');
   if(!t){t=document.createElement('div');t.id='save-toast';
