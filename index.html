@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v91</title>
+<title>Beregeningsplan Editor v92</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v91 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v92 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -11120,34 +11120,62 @@ function filterPrijslijst(q){
   let prevCat='';
   const rows=filtered.map(function(item){
     const sp=stored[item.id]||{};
-    const ink=sp.inkoop!==undefined?sp.inkoop:(item.inkoop||0);
+    const bruto=sp.bruto!==undefined?sp.bruto:(item.bruto||'');
+    const korting=sp.korting!==undefined?sp.korting:(item.korting!==undefined?item.korting:50);
+    const ink=sp.inkoop!==undefined?sp.inkoop:(bruto&&korting!==undefined?Math.round(bruto*(1-korting/100)*100)/100:(item.inkoop||0));
     const marge=sp.marge!==undefined?sp.marge:(item.marge||20);
     const btw=sp.btw!==undefined?sp.btw:(item.btw||21);
+    const visible=sp.visible!==undefined?sp.visible:(item.visible!==false);
     const vk=ink>0?Math.round(ink*(1+marge/100)*100)/100:0;
     let catRow='';
     if(item.cat!==prevCat){
-      catRow='<tr><td colspan="7" style="padding:6px 8px 2px;font-weight:700;font-size:11px;color:var(--tx2);background:var(--bg);text-transform:uppercase">'+item.cat+'</td></tr>';
+      catRow='<tr><td colspan="8" style="padding:6px 8px 2px;font-weight:700;font-size:11px;color:var(--tx2);background:var(--bg);text-transform:uppercase">'+item.cat+'</td></tr>';
       prevCat=item.cat;
     }
     return catRow+'<tr style="border-bottom:1px solid var(--bor2)">'
       +'<td style="padding:4px 6px;font-size:11px;color:var(--tx2)">'+item.id+'</td>'
       +'<td style="padding:4px 6px;font-size:12px">'+item.omschrijving+'</td>'
       +'<td style="padding:4px 6px;font-size:11px;color:var(--tx2)">'+item.eenh+'</td>'
-      +'<td style="padding:4px 6px;text-align:right"><input type="number" min="0" step="0.01" value="'+(ink||'')+'" placeholder="0.00" data-id="'+item.id+'" data-field="inkoop" style="width:75px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:11px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updatePrijs(this)"></td>'
+      +'<td style="padding:4px 6px;text-align:right"><input type="number" min="0" step="0.01" value="'+(bruto||'')+'" placeholder="0.00" data-id="'+item.id+'" data-field="bruto" style="width:70px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:11px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updatePrijsBruto(this)"></td>'
+      +'<td style="padding:4px 6px;text-align:right"><input type="number" min="0" max="100" step="1" value="'+korting+'" placeholder="50" data-id="'+item.id+'" data-field="korting" style="width:50px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:11px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updatePrijsBruto(this)"></td>'
+      +'<td style="padding:4px 6px;text-align:right"><input type="number" min="0" step="0.01" value="'+(ink||'')+'" placeholder="0.00" data-id="'+item.id+'" data-field="inkoop" id="pl-ink-'+item.id+'" style="width:75px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:11px;text-align:right;background:var(--sur2);color:var(--tx)" oninput="updatePrijs(this)"></td>'
       +'<td style="padding:4px 6px;text-align:right"><input type="number" min="0" max="500" step="1" value="'+marge+'" data-id="'+item.id+'" data-field="marge" style="width:50px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:11px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updatePrijs(this)"></td>'
       +'<td style="padding:4px 6px;text-align:right"><select data-id="'+item.id+'" data-field="btw" style="padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:11px;background:var(--sur);color:var(--tx)" onchange="updatePrijs(this)"><option value="0"'+(btw===0?' selected':'')+'>0%</option><option value="6"'+(btw===6?' selected':'')+'>6%</option><option value="21"'+(btw===21?' selected':'')+'>21%</option></select></td>'
-      +'<td style="padding:4px 6px;text-align:right;font-size:12px;color:'+(vk>0?'#16a34a':'var(--tx2)')+'">'+( vk>0?'euro'+vk.toFixed(2):'--')+'</td>'
+      +'<td style="padding:4px 6px;text-align:right;font-size:12px;color:'+(vk>0?'#16a34a':'var(--tx2)')+'">'+( vk>0?'€'+vk.toFixed(2):'--')+'</td>'
+      +'<td style="padding:4px 6px;text-align:center"><input type="checkbox" data-id="'+item.id+'" data-field="visible" '+(visible?'checked':'')+' onchange="updatePrijs(this)" title="Standaard zichtbaar in materiaallijst"></td>'
       +'</tr>';
   }).join('');
   const body=document.getElementById('pl-body');
   if(body)body.innerHTML=rows;
 }
 
+function updatePrijsBruto(el){
+  const id=el.getAttribute('data-id');
+  const row=el.closest('tr');
+  if(!row)return;
+  const brutoEl=row.querySelector('[data-field="bruto"]');
+  const kortingEl=row.querySelector('[data-field="korting"]');
+  const inkEl=document.getElementById('pl-ink-'+id);
+  if(brutoEl&&kortingEl&&inkEl){
+    const bruto=parseFloat(brutoEl.value)||0;
+    const korting=parseFloat(kortingEl.value)||0;
+    if(bruto>0){
+      inkEl.value=Math.round(bruto*(1-korting/100)*100)/100;
+    }
+  }
+  updatePrijs(el);
+}
+
 function updatePrijs(el){
   const stored=loadCatalogPrices();
   const id=el.getAttribute('data-id');
+  const field=el.getAttribute('data-field');
   if(!stored[id])stored[id]={};
-  stored[id][el.getAttribute('data-field')]=parseFloat(el.value)||0;
+  if(field==='visible'){
+    stored[id]['visible']=el.checked;
+  } else {
+    stored[id][field]=parseFloat(el.value)||0;
+  }
   saveCatalogPrices(stored);
   const row=el.closest('tr');
   if(row){
@@ -11161,7 +11189,7 @@ function updatePrijs(el){
     });
     const vk=ink>0?Math.round(ink*(1+marge/100)*100)/100:0;
     const cells=row.cells;
-    if(cells&&cells[6]){cells[6].textContent=vk>0?'euro'+vk.toFixed(2):'--';cells[6].style.color=vk>0?'#16a34a':'var(--tx2)';}
+    if(cells&&cells[7]){cells[7].textContent=vk>0?'€'+vk.toFixed(2):'--';cells[7].style.color=vk>0?'#16a34a':'var(--tx2)';}
   }
 }
 
@@ -11912,7 +11940,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v91</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v92</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -14565,10 +14593,13 @@ document.addEventListener('keydown',e=>{
           <th style="text-align:left;padding:5px 6px;width:110px">Code</th>
           <th style="text-align:left;padding:5px 6px">Omschrijving</th>
           <th style="text-align:left;padding:5px 6px;width:50px">Eenh</th>
-          <th style="text-align:right;padding:5px 6px;width:85px">Inkoop</th>
-          <th style="text-align:right;padding:5px 6px;width:65px">Marge%</th>
-          <th style="text-align:right;padding:5px 6px;width:60px">BTW%</th>
+          <th style="text-align:right;padding:5px 6px;width:80px">Bruto €</th>
+          <th style="text-align:right;padding:5px 6px;width:65px">Korting %</th>
+          <th style="text-align:right;padding:5px 6px;width:85px">Inkoop €</th>
+          <th style="text-align:right;padding:5px 6px;width:65px">Marge %</th>
+          <th style="text-align:right;padding:5px 6px;width:60px">BTW %</th>
           <th style="text-align:right;padding:5px 6px;width:75px">Verkoop</th>
+          <th style="text-align:center;padding:5px 6px;width:55px" title="Standaard zichtbaar in materiaallijst">Zichtbaar</th>
         </tr>
       </thead>
       <tbody id="pl-body"></tbody>
