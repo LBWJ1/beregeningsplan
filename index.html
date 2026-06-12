@@ -5739,7 +5739,24 @@ function openProject(id){
     }
   } else {
     const data=proj.data||{};
-    loadProjectData(data);
+    // bgImageData kan op proj zelf zitten (.bwp) of in proj.data (.json)
+    const bgSrc = proj.bgImageData||data.bgImageData;
+    if(bgSrc){
+      const img=new Image();
+      img.onload=function(){
+        initCanvas(img.width,img.height);
+        pdfCtx.drawImage(img,0,0,img.width,img.height);
+        bgImage=pdfCtx.getImageData(0,0,canvasW,canvasH);
+        redraw();
+      };
+      img.src=bgSrc;
+    }
+    // Normaliseer data: gebruik vlakke structuur als beschikbaar
+    if(proj.elements||proj.pipes||proj.plantZones){
+      loadProjectData(proj);
+    } else {
+      loadProjectData(data);
+    }
   }
   updateSubplanLabel();
   closeAll();
@@ -5762,16 +5779,35 @@ function importProjectJSON(e){
   reader.onload=ev=>{
     try{
       const d=JSON.parse(ev.target.result);
-      const projs=getProjects();const id='p_'+Date.now();
-      const name=d.name||file.name.replace('.json','');
-      projs.unshift({id,name,savedAt:d.savedAt||new Date().toISOString(),data:d});
-      saveProjects(projs);renderProjectPanel();
-      // Show success message in panel instead of alert
+      const projs=getProjects();
       const msg=document.getElementById('proj-import-msg');
-      if(msg){msg.textContent='✓ "'+name+'" geïmporteerd — klik Openen';msg.style.color='#16a34a';}
+
+      // Detecteer of het een volledig .bwp project is (heeft id en elements/pipes direct)
+      const isBwp = d.id && (d.elements||d.pipes||d.plantZones||d.bgImageData);
+      // Of een oud .json export (heeft name maar data genest)
+      const isJson = !isBwp;
+
+      let proj;
+      if(isBwp){
+        // .bwp: gebruik het direct als project
+        proj = d;
+        const existing = projs.findIndex(p=>p.id===d.id);
+        if(existing>=0) projs[existing]=proj;
+        else projs.unshift(proj);
+      } else {
+        // .json export: wrap in project structuur
+        const id='p_'+Date.now();
+        const name=d.name||file.name.replace(/\.(json|bwp)$/i,'');
+        proj = {id, name, savedAt:d.savedAt||new Date().toISOString(), data:d};
+        projs.unshift(proj);
+      }
+
+      saveProjects(projs);
+      renderProjectPanel();
+      if(msg){msg.textContent='✓ "'+( proj.name||file.name)+'" geïmporteerd — klik Openen';msg.style.color='#16a34a';}
     }catch(err){
       const msg=document.getElementById('proj-import-msg');
-      if(msg){msg.textContent='✗ Ongeldig JSON-bestand';msg.style.color='#dc2626';}
+      if(msg){msg.textContent='✗ Ongeldig bestand: '+err.message;msg.style.color='#dc2626';}
     }
   };
   reader.readAsText(file);e.target.value='';
