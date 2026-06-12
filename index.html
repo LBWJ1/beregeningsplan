@@ -6591,8 +6591,22 @@ async function saveProjectToFile(){
   const proj = getActiveProject ? getProjects().find(p=>p.id===activeProjectId) : null;
   if(!proj){showToast('Geen actief project','#dc2626');return;}
 
-  // Include background image in project
+  // Zorg dat huidig subplan opgeslagen is
+  saveCurrentSubplan();
+
+  // Gebruik genormaliseerde data (vlakke structuur met elements, pipes etc.)
   const data = {...proj};
+  const current = currentProjectData(false);
+  data.elements = current.elements||elements||[];
+  data.pipes = current.pipes||pipes||[];
+  data.cables = cables||[];
+  data.textNotes = current.textNotes||textNotes||[];
+  data.plantZones = current.plantZones||plantZones||[];
+  data.pxPerMeter = current.pxPerMeter||pxPerMeter||100;
+  data.prices = current.prices||prices||{};
+  data.counter = current.counter||counter||{};
+
+  // Grondplan meeopslaan
   if(bgImage){
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = canvasW; tmpCanvas.height = canvasH;
@@ -6600,7 +6614,6 @@ async function saveProjectToFile(){
     tmpCtx.putImageData(bgImage, 0, 0);
     data.bgImageData = tmpCanvas.toDataURL('image/jpeg', 0.85);
   }
-  data.cables = cables||[];
 
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], {type:'application/json'});
@@ -6655,7 +6668,17 @@ async function saveProjectToFileQuick(){
   if(_fileHandle){
     const proj = getProjects().find(p=>p.id===activeProjectId);
     if(!proj)return;
+    saveCurrentSubplan();
+    const current = currentProjectData(false);
     const data = {...proj};
+    data.elements = current.elements||elements||[];
+    data.pipes = current.pipes||pipes||[];
+    data.cables = cables||[];
+    data.textNotes = current.textNotes||textNotes||[];
+    data.plantZones = current.plantZones||plantZones||[];
+    data.pxPerMeter = current.pxPerMeter||pxPerMeter||100;
+    data.prices = current.prices||prices||{};
+    data.counter = current.counter||counter||{};
     if(bgImage){
       const tmpCanvas = document.createElement('canvas');
       tmpCanvas.width=canvasW;tmpCanvas.height=canvasH;
@@ -6663,7 +6686,6 @@ async function saveProjectToFileQuick(){
       tmpCtx.putImageData(bgImage,0,0);
       data.bgImageData=tmpCanvas.toDataURL('image/jpeg',0.85);
     }
-    data.cables=cables||[];
     try{
       const writable = await _fileHandle.createWritable();
       await writable.write(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
@@ -6689,14 +6711,19 @@ function loadProjectFromJSON(data){
     img.src = data.bgImageData;
     delete data.bgImageData;
   }
-  // Restore project data
+  // Restore project data — normaliseer data.data vs vlakke structuur
   const projs = getProjects();
   const existing = projs.findIndex(p=>p.id===data.id);
   if(existing>=0) projs[existing]=data;
   else projs.unshift(data);
   saveProjects(projs);
   activeProjectId=data.id;
-  if(data.data) loadProjectData(data.data);
+  // Probeer eerst vlakke structuur (elements direct op data), dan geneste (data.data)
+  if(data.elements||data.pipes||data.plantZones){
+    loadProjectData(data);
+  } else if(data.data){
+    loadProjectData(data.data);
+  }
   showToast('Project geladen: '+data.name,'#16a34a');
 }
 
