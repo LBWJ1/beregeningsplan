@@ -15072,10 +15072,10 @@ function autoSaveBundle(){
   if(_bundleHandle){
     saveBundleToFile(true);
   } else {
-    const bekendBestand = localStorage.getItem('bw_bundle_filename');
-    if(bekendBestand && !_bundleWarnGegeven){
+    if(!_bundleWarnGegeven){
       _bundleWarnGegeven = true;
-      _toonKoppelingToast('bundel', bekendBestand.replace(/^.*[\\\/]/, ''));
+      var bbn = localStorage.getItem('bw_bundle_filename') || 'projecten.bwb';
+      _toonKoppelingToast('bundel', bbn.replace(/^.*[/]/, ''));
     }
   }
 }
@@ -16432,11 +16432,11 @@ async function autoSaveSettings(){
       await writable.close();
     } catch(e){ /* stil falen */ }
   } else {
-    // Geen handle — toon éénmalige herinnering als er een bekend bestand was
-    const bekendBestand = localStorage.getItem('bw_settings_filename');
-    if(bekendBestand && !_settingsWarnGegeven){
+    // Geen handle — toon éénmalige herinnering (ook als nog nooit opgeslagen)
+    if(!_settingsWarnGegeven){
       _settingsWarnGegeven = true;
-      _toonKoppelingToast('instellingen', bekendBestand.replace(/^.*[\\\/]/, ''));
+      var bekendBestand = localStorage.getItem('bw_settings_filename') || 'instellingen.bws';
+      _toonKoppelingToast('instellingen', bekendBestand.replace(/^.*[\/]/, ''));
     }
   }
 }
