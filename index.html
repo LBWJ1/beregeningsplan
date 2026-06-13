@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v93</title>
+<title>Beregeningsplan Editor v103</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v93 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v103 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -104,7 +104,7 @@ button.ub.pri:hover{background:#1250a0}
   <button class="b" onclick="openHandleiding()" style="background:#fbbf24;color:#1e1e1e;border-color:#f59e0b;font-weight:700">📖 Handleiding</button>
   <div id="subplan-switcher" style="display:inline-flex;align-items:center;gap:4px;background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:6px;padding:2px 6px">
     <button class="b" onclick="prevSubplan()" style="padding:3px 6px;font-size:13px" title="Vorig subplan">‹</button>
-    <span id="subplan-label" style="font-size:11px;font-weight:600;min-width:100px;text-align:center;cursor:pointer;color:var(--bl)" onclick="openSubplanManager()" title="Klik om subplans te beheren — gebruik meerdere subplans voor verschillende zones of verdiepingen">Subplan 1</span>
+    <span id="subplan-label" style="font-size:11px;font-weight:600;min-width:80px;text-align:center;cursor:pointer" onclick="openSubplanManager()" title="Klik om subplans te beheren — gebruik meerdere subplans voor verschillende zones of verdiepingen" style="color:var(--bl)">Subplan 1</span>
     <button class="b" onclick="nextSubplan()" style="padding:3px 6px;font-size:13px" title="Volgend subplan">›</button>
     <button class="b" onclick="addSubplan()" style="padding:3px 8px;font-size:11px;font-weight:700;color:var(--bl);border-color:var(--bl)" title="Nieuw subplan toevoegen">+ Subplan</button>
   </div>
@@ -375,7 +375,7 @@ button.ub.pri:hover{background:#1250a0}
     if(selEl&&selEl.type&&EDEFS[selEl.type]&&EDEFS[selEl.type].cat==='spr'){
       selEl.radius=parseFloat(this.value)*pxPerMeter;redraw();
     }">
-    <label style="display:flex;align-items:center;gap:4px">Arc: <input type="number" id="av-input" min="45" max="360" value="360" step="1" style="width:52px;padding:2px 4px;border:1px solid var(--bor2);border-radius:var(--r);font-size:11px;text-align:center" onchange="if(selEl&&EDEFS[selEl.type]?.cat==='spr'){selEl.arc=Math.max(45,Math.min(360,parseInt(this.value)||360));document.getElementById('arc-slider').value=selEl.arc;document.getElementById('av').textContent=selEl.arc;const ai=document.getElementById('av-input');if(ai)ai.value=selEl.arc;redraw();}">°<span id="av" style="display:none">360</span></label>
+    <label style="display:flex;align-items:center;gap:4px">Arc: <input type="number" id="av-input" min="45" max="360" value="360" step="1" style="width:52px;padding:2px 4px;border:1px solid var(--bor2);border-radius:var(--r);font-size:11px;text-align:center" onchange="if(selEl&&EDEFS[selEl.type]&&EDEFS[selEl.type].cat==='spr'){selEl.arc=Math.max(45,Math.min(360,parseInt(this.value)||360));document.getElementById('arc-slider').value=selEl.arc;document.getElementById('av').textContent=selEl.arc;const ai=document.getElementById('av-input');if(ai)ai.value=selEl.arc;redraw();}">°<span id="av" style="display:none">360</span></label>
     <input type="range" id="arc-slider" min="45" max="360" value="360" step="1" oninput="
     document.getElementById('av').textContent=this.value;
     if(selEl&&selEl.type&&EDEFS[selEl.type]&&EDEFS[selEl.type].cat==='spr'){
@@ -966,7 +966,7 @@ const CATALOG=[
 {id:'2.04.4SR6',cat:'Pompen',omschrijving:'Pedrollo 4SR6/13s bronpomp',eenh:'st',marge:20,btw:21,visible:true},
 {id:'BORING-M',cat:'Diepteboring',omschrijving:'Diepteboring per meter',eenh:'m',marge:0,btw:21,visible:true},
 {id:'STAKKABOX',cat:'Diepteboring',omschrijving:'Stakkabox afwerking pompput (bodemplaat + HDPE deksel staalframe)',eenh:'st',marge:20,btw:21,visible:true},
-{id:'BRONKRAAN',cat:'Diversen',omschrijving:'Bronkraan met hardhouten paaltje en leidingwerk',eenh:'st',marge:20,btw:21,visible:true},
+{id:'BRONKRAAN',cat:'Diversen',omschrijving:'Bronkraan met hardhouten paaltje en leidingwerk',eenh:'st',marge:20,btw:21,visible:true,inkoop:190},
 {id:'GRASZODEN',cat:'Diversen',omschrijving:'Nieuwe graszoden',eenh:'m2',marge:20,btw:21,visible:true},
 {id:'DEVOLO-WIFI',cat:'Controllers',omschrijving:'Devolo Wifi verbindingsmodule',eenh:'st',marge:20,btw:21,visible:true},
 {id:'CLACK-50',cat:'Ontijzering',omschrijving:'Clack WS1CI ontijzering 50 liter',eenh:'st',marge:20,btw:21,visible:true},
@@ -8882,7 +8882,7 @@ var _cableType='9',_cableStyle='straight',_cablePanelOpen=false;
 let elements=[],pipes=[],textNotes=[],plantZones=[],freePipe=[];
 let pipeStart=null,polyPts=[],rectStart=null,freeDrawing=false;
 let pxPerMeter=100,bgImage=null,canvasW=900,canvasH=640;
-let _schaalIngesteld=false; // wordt true na expliciet instellen schaal
+let _schaalIngesteld=false;
 let hoveredEl=null,selEl=null,selGroup=[],dragging=false,dragOX=0,dragOY=0;
 const layerVis={pipes:true,sprs:true,drip:true,zones:true,labels:true,cables:true};
 const PROJECT_STATUSES={
@@ -8962,42 +8962,14 @@ const PIPE_LABELS={16:'Ø16',25:'Ø25',32:'Ø32',40:'Ø40',50:'Ø50'};
 
 function checkSchaalIngesteld(){
   if(_schaalIngesteld)return true;
-  // Toon niet-wegklikbare melding
-  const existing=document.getElementById('schaal-waarschuwing');
-  if(existing)return false;
-  const div=document.createElement('div');
+  if(document.getElementById('schaal-waarschuwing'))return false;
+  var div=document.createElement('div');
   div.id='schaal-waarschuwing';
   div.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #f59e0b;border-radius:12px;padding:24px 28px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:400px;text-align:center';
-  div.innerHTML='<div style="font-size:32px;margin-bottom:8px">📐</div>'    +'<div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#92400e">Schaal nog niet ingesteld</div>'    +'<div style="font-size:13px;color:#374151;margin-bottom:16px">Stel eerst de schaal in voor je begint te tekenen. Anders kloppen alle afmetingen en oppervlaktes niet.</div>'    +'<div style="display:flex;gap:10px;justify-content:center">'    +'<button onclick="closeAll();openModal(\'scale-panel\');document.getElementById(\'schaal-waarschuwing\').remove()" style="padding:8px 18px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">📐 Schaal instellen</button>'    +'<button onclick="document.getElementById(\'schaal-waarschuwing\').remove()" style="padding:8px 18px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer">Toch doorgaan</button>'    +'</div>';
+  div.innerHTML="<div style='font-size:32px;margin-bottom:8px'>&#128208;</div><div style='font-weight:700;font-size:15px;margin-bottom:8px;color:#92400e'>Schaal nog niet ingesteld</div><div style='font-size:13px;color:#374151;margin-bottom:16px'>Stel eerst de schaal in voor je begint te tekenen.</div><div style='display:flex;gap:10px;justify-content:center'><button onclick=\"closeAll();openModal('scale-panel');document.getElementById('schaal-waarschuwing').remove()\" style='padding:8px 18px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600'>&#128208; Schaal instellen</button><button onclick=\"document.getElementById('schaal-waarschuwing').remove()\" style='padding:8px 18px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer'>Toch doorgaan</button></div>";
   document.body.appendChild(div);
   return false;
 }
-
-var _offerteLaatsteGenereer = null;
-var _planLaatsteWijziging = null;
-
-function markeerPlanGewijzigd(){
-  _planLaatsteWijziging = Date.now();
-  const btn = document.getElementById('offerte-btn');
-  if(btn && _offerteLaatsteGenereer && _planLaatsteWijziging > _offerteLaatsteGenereer){
-    btn.style.borderColor = '#f59e0b';
-    btn.style.color = '#92400e';
-    btn.title = '⚠ Plan is gewijzigd sinds de laatste berekening — open offerte en klik Genereer';
-    btn.textContent = '💶 Offerte ⚠';
-  }
-}
-
-function markeerOfferteGegenereerd(){
-  _offerteLaatsteGenereer = Date.now();
-  const btn = document.getElementById('offerte-btn');
-  if(btn){
-    btn.style.borderColor = '';
-    btn.style.color = '';
-    btn.title = '';
-    btn.textContent = '💶 Offerte';
-  }
-}
-
 // ── INIT ──
 function initCanvas(w,h){
   initBodyCatDropdown();
@@ -10496,19 +10468,13 @@ function redoAction(){
   updateCounts();redraw();selEl=null;updateSelPanel();
 }
 function clearAll(){
-  const dlg=document.createElement('div');
-  dlg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #dc2626;border-radius:12px;padding:24px 28px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:380px;text-align:center';
-  dlg.innerHTML='<div style="font-size:32px;margin-bottom:8px">⚠️</div>'
-    +'<div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#dc2626">Alles wissen?</div>'
-    +'<div style="font-size:13px;color:#374151;margin-bottom:16px">Dit wist alle sproeiers, leidingen, zones en tekst van het huidige subplan. Dit kan <b>niet</b> ongedaan gemaakt worden.</div>'
-    +'<div style="display:flex;gap:10px;justify-content:center">'
-    +'<button onclick="this.closest(\'div[style]\').remove()" style="padding:8px 18px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer">Annuleer</button>'
-    +'<button onclick="this.closest(\'div[style]\').remove();_clearAllConfirmed()" style="padding:8px 18px;background:#dc2626;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">Ja, wis alles</button>'
-    +'</div>';
-  document.body.appendChild(dlg);
+  var d=document.createElement('div');
+  d.id='clearall-dlg';
+  d.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #dc2626;border-radius:12px;padding:24px 28px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:380px;text-align:center';
+  d.innerHTML='<div style="font-size:32px">&#9888;&#65039;</div><div style="font-weight:700;font-size:15px;margin:8px 0;color:#dc2626">Alles wissen?</div><div style="font-size:13px;color:#374151;margin-bottom:16px">Dit wist alle elementen van het huidige subplan. Niet ongedaan te maken.</div><div style="display:flex;gap:10px;justify-content:center"><button onclick="document.getElementById(\'clearall-dlg\').remove()" style="padding:8px 18px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;font-size:13px;cursor:pointer">Annuleer</button><button onclick="document.getElementById(\'clearall-dlg\').remove();_clearAllOk()" style="padding:8px 18px;background:#dc2626;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">Ja, wis alles</button></div>';
+  document.body.appendChild(d);
 }
-
-function _clearAllConfirmed(){
+function _clearAllOk(){
   elements=[];pipes=[];textNotes=[];plantZones=[];polyPts=[];rectStart=null;pipeStart=null;counter={};
   updateCounts();redraw();selEl=null;updateSelPanel();
 }
@@ -10633,7 +10599,7 @@ function setScaleRatio(){
       p.x2*=scaleFactor;p.y2*=scaleFactor;});
     if(window.textNotes)textNotes.forEach(t=>{t.x*=scaleFactor;t.y*=scaleFactor;});
   }
-  pxPerMeter=newPpm;_schaalIngesteld=true;
+  pxPerMeter=newPpm;
   const sd=document.getElementById('scale-display');
   sd.textContent=paperMm>0?`1:${ratio} (${Math.round(newPpm)}px/m)`:`1:${ratio}`;
   sd.style.color='';
@@ -11168,9 +11134,9 @@ function filterPrijslijst(q){
   const filtered=CATALOG.filter(function(item){
     const mc=!cat||item.cat===cat;
     const mq=!search||item.omschrijving.toLowerCase().indexOf(search)>=0||item.id.toLowerCase().indexOf(search)>=0;
-    const sp=stored[item.id]||{};
-    const isVisible=sp.visible!==undefined?sp.visible:(item.visible!==false);
-    const mv=!alleenZichtbaar||search||isVisible;
+    const sp2=stored[item.id]||{};
+    const isVis=sp2.visible!==undefined?sp2.visible:(item.visible!==false);
+    const mv=!alleenZichtbaar||search||isVis;
     return mc&&mq&&mv;
   });
   let prevCat='';
@@ -11466,61 +11432,48 @@ function calcDripRolls(m){
 }
 
 function buildExtraMatSection(extra){
-  const stored=loadCatalogPrices();
-  let html='<div style="background:var(--sur);border:1px solid var(--bor2);border-radius:8px;padding:12px;margin-bottom:12px">';
+  var stored=loadCatalogPrices();
+  var html='<div style="background:var(--sur);border:1px solid var(--bor2);border-radius:8px;padding:12px;margin-bottom:12px">';
   html+='<h3 style="margin:0 0 8px;font-size:13px;color:var(--bl)">Extra materialen</h3>';
-  html+='<input type="text" placeholder="Zoeken... (doorzoekt alle artikelen)" style="width:100%;padding:6px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;margin-bottom:8px;background:var(--sur);color:var(--tx);box-sizing:border-box" oninput="filterExtraMat(this.value)">';
-
-  // Splits in zichtbaar en verborgen
-  const visible=[], hidden=[];
+  html+='<input type="text" placeholder="Zoeken in alle artikelen..." style="width:100%;padding:6px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;margin-bottom:8px;background:var(--sur);color:var(--tx);box-sizing:border-box" oninput="filterExtraMat(this.value)">';
+  var visible=[],hidden=[];
   CATALOG.forEach(function(item){
-    const sp=stored[item.id]||{};
-    const isVisible=sp.visible!==undefined?sp.visible:(item.visible!==false);
-    if(isVisible) visible.push(item);
-    else hidden.push(item);
+    var sp=stored[item.id]||{};
+    var isVisible=sp.visible!==undefined?sp.visible:(item.visible!==false);
+    if(isVisible)visible.push(item);else hidden.push(item);
   });
-
-  function renderItems(items, listId){
-    let h2='<div id="'+listId+'" style="max-height:250px;overflow-y:auto">';
-    let prevCat='';
+  function renderItems(items,listId){
+    var out='<div id="'+listId+'" style="max-height:250px;overflow-y:auto">';
+    var prevCat='';
     items.forEach(function(item){
       var ex=extra.find(function(e){return e.id===item.id;})||{checked:false,aantal:0};
-      if(item.cat!==prevCat){h2+='<div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;padding:6px 4px 2px" class="ecat">'+item.cat+'</div>';prevCat=item.cat;}
-      h2+='<div style="display:flex;align-items:center;gap:8px;padding:3px 4px;border-bottom:1px solid var(--bor2);font-size:12px" class="eitem" data-s="'+item.omschrijving.toLowerCase()+' '+item.id.toLowerCase()+'">'
-        +'<input type="checkbox" id="em-chk-'+item.id+'"'+((ex.checked||ex.aantal>0)?' checked ':'')+'style="cursor:pointer" onchange="toggleExtraMat(\''+item.id+'\',this.checked)">'
+      if(item.cat!==prevCat){out+='<div style="font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;padding:6px 4px 2px" class="ecat">'+item.cat+'</div>';prevCat=item.cat;}
+      var chk=(ex.checked||ex.aantal>0)?'checked':'';
+      out+='<div style="display:flex;align-items:center;gap:8px;padding:3px 4px;border-bottom:1px solid var(--bor2);font-size:12px" class="eitem" data-s="'+item.omschrijving.toLowerCase()+' '+item.id.toLowerCase()+'">'
+        +'<input type="checkbox" id="em-chk-'+item.id+'" '+chk+' style="cursor:pointer" onchange="toggleExtraMat(this.dataset.id,this.checked)" data-id="'+item.id+'">'
         +'<span style="flex:1">'+item.omschrijving+' <span style="color:var(--tx2);font-size:10px">['+item.id+']</span></span>'
         +'<span style="color:var(--tx2);font-size:10px;width:30px">'+item.eenh+'</span>'
-        +'<input type="number" id="em-aantal-'+item.id+'" min="0" step="1" value="'+(ex.aantal||0)+'" placeholder="0" style="width:55px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:12px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updateExtraAantal(\''+item.id+'\',this.value)">'
+        +'<input type="number" id="em-aantal-'+item.id+'" min="0" step="1" value="'+(ex.aantal||0)+'" placeholder="0" style="width:55px;padding:3px;border:1px solid var(--bor2);border-radius:4px;font-size:12px;text-align:right;background:var(--sur);color:var(--tx)" oninput="updateExtraAantal(this.dataset.id,this.value)" data-id="'+item.id+'">'
         +'</div>';
     });
-    h2+='</div>';
-    return h2;
+    out+='</div>';
+    return out;
   }
-
-  html+=renderItems(visible, 'extra-mat-list');
-
-  // Dropdown voor niet-aangevinkte items
-  html+='<div style="margin-top:8px">'
-    +'<button class="ub" style="font-size:11px;width:100%" onclick="toggleMoreMat()">'
-    +'▾ Meer materialen ('+hidden.length+' artikelen)</button>'
-    +'<div id="extra-mat-more" style="display:none;margin-top:6px">'
-    +renderItems(hidden, 'extra-mat-list-more')
-    +'</div></div>';
-
+  html+=renderItems(visible,'extra-mat-list');
+  html+='<div style="margin-top:8px"><button class="ub" style="font-size:11px;width:100%" onclick="toggleMoreMat()">&#9662; Meer materialen ('+hidden.length+' artikelen)</button>'
+    +'<div id="extra-mat-more" style="display:none;margin-top:6px">'+renderItems(hidden,'extra-mat-list-more')+'</div></div>';
   html+='</div>';
   return html;
 }
 
 function toggleMoreMat(){
-  const el=document.getElementById('extra-mat-more');
-  const btn=el&&el.previousElementSibling;
+  var el=document.getElementById('extra-mat-more');
+  var btn=el&&el.previousElementSibling;
   if(!el)return;
-  const open=el.style.display==='none';
+  var open=el.style.display==='none';
   el.style.display=open?'':'none';
   if(btn)btn.textContent=(open?'▴':'▾')+' Meer materialen ('+(el.querySelectorAll('.eitem').length)+' artikelen)';
 }
-
-
 
 function filterExtraMat(q){
   var s=q.toLowerCase();
@@ -11611,6 +11564,9 @@ function openOfferte(){
     var projKlant=proj&&proj.klant?proj.klant:(proj&&proj.data&&proj.data.klant?proj.data.klant:{});
     var klantNaam=projKlant.naam||projKlant.bedrijf||'';
     if(klantNaam&&document.getElementById('off-klant'))document.getElementById('off-klant').value=klantNaam;
+    // Laad contactpersoon
+    var cp=document.getElementById('off-contactpersoon');
+    if(cp)try{cp.value=localStorage.getItem('bww_contactpersoon')||'Jef Geukens';}catch(e){cp.value='Jef Geukens';}
   }catch{}
   document.getElementById('ov').style.display='block';
   document.getElementById('offerte-panel').classList.add('open');
@@ -11847,23 +11803,33 @@ function addKlantBlok(){
 
 function pickKlantBlok(idx){
   var blok=STANDAARD_BLOKKEN[idx];
+  // Check of het blok een koppeling heeft en het element ingetekend is
+  var koppeling=checkBlokGekoppeld(blok.titel);
+  if(!koppeling.ok){
+    // Toon melding - niet toevoegen
+    var dlg=document.createElement('div');
+    dlg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #f59e0b;border-radius:12px;padding:24px 28px;z-index:10001;box-shadow:0 8px 32px rgba(0,0,0,.2);max-width:400px;text-align:center';
+    dlg.innerHTML='<div style="font-size:32px;margin-bottom:8px">📐</div>'
+      +'<div style="font-weight:700;font-size:15px;margin-bottom:8px;color:#92400e">Eerst intekenen op plan</div>'
+      +'<div style="font-size:13px;color:#374151;margin-bottom:16px">Teken <b>'+(koppeling.naam||blok.titel)+'</b> eerst in op het plan. Het blok verschijnt dan automatisch in de offerte met correcte informatie.</div>'
+      +'<button onclick="this.closest(\'div[style]\').remove()" style="padding:8px 24px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">OK, ik teken het in</button>';
+    document.body.appendChild(dlg);
+    return;
+  }
+  // Vrij blok of element ingetekend — toevoegen
   var blokken=window._klantOfferteBlokken||[];
-  // Get naam eerste medewerker voor ondertekening
-  var meds=loadMedewerkers();
-  var medewerkerNaam=meds&&meds.length&&meds[0].naam?meds[0].naam:'';
   blokken.push({titel:blok.titel,omschrijving:blok.omschrijving,prijs:blok.prijs,actief:true});
   window._klantOfferteBlokken=blokken;
+  saveForfaitBlokken(blokken);
   openKlantOfferte();
 }
 
 function renderKlantOffertePreview(){
-  markeerOfferteGegenereerd();
   var blokken=window._klantOfferteBlokken||[];
   var proj=getActiveProject()?getProjects().find(function(p){return p.id===activeProjectId;}):null;
   var klant=proj&&proj.klant?proj.klant:{};
   var geldig=window._klantOfferteGeldig||30;
-  var meds=loadMedewerkers();
-  var medewerkerNaam=meds&&meds.length&&meds[0].naam?meds[0].naam:'';
+  var medewerkerNaam=(function(){var el=document.getElementById('off-contactpersoon');if(el&&el.value)return el.value;try{return localStorage.getItem('bww_contactpersoon')||'Jef Geukens';}catch(e){return 'Jef Geukens';}})();
   var ref=(document.getElementById('off-ref')||{value:''}).value||'';
   var datum=(document.getElementById('off-datum')||{value:''}).value||new Date().toISOString().split('T')[0];
   var datumFmt=datum?new Date(datum).toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'}):datum;
@@ -11956,67 +11922,64 @@ function switchOfferteTab(tab){
   } else {
     tk.style.color='var(--bl)';tk.style.borderBottomColor='var(--bl)';tk.style.fontWeight='700';
     ti.style.color='var(--tx2)';ti.style.borderBottomColor='transparent';ti.style.fontWeight='600';
-    window._klantOfferteBlokken=null;
     openKlantOfferte();
   }
 }
 
-function checkBlokGekoppeld(blokTitel){
-  // Blokken die vrij zijn (geen koppeling nodig)
-  const vrij=['Beregening gazon en beplanting','Aanpassing bestaande installatie','Eigen blok','Graszoden herstelling'];
-  if(vrij.some(function(v){return blokTitel.toLowerCase().indexOf(v.toLowerCase())>=0;}))return {ok:true};
-
-  const proj=getActiveProject()?getProjects().find(function(p){return p.id===activeProjectId;}):null;
-  const extra=proj?proj.extraMat||[]:[];
-  const stored=loadCatalogPrices();
-
-  // Koppelingsmap: blok → element type op plan + catalogus IDs
-  const koppelingen={
-    'Verpomping':{planType:'pump', catCats:['Pompen']},
-    'Diepteboring':{planType:'boring', catCats:['Diepteboring']},
-    'Waterbehandeling':{planType:'iron', catCats:['Ontijzering']},
-    'Regenmelder':{planType:'rainsensor', catCats:['Controllers']},
-    'Bodemvochtigheidssensor':{planType:'soilsensor', catCats:['Controllers']},
-    'Wifi verbindingsmodule':{planType:'wifimod', catCats:['Controllers']},
-    'Bronkraan met paaltje':{planType:'tappost', catCats:['Diversen']},
-  };
-
-  const kop=Object.keys(koppelingen).find(function(k){return blokTitel.toLowerCase().indexOf(k.toLowerCase())>=0;});
-  if(!kop)return {ok:true}; // onbekend blok → vrij
-
-  const {planType, catCats}=koppelingen[kop];
-
-  // Check 1: op plan ingetekend?
-  const opPlan=elements.some(function(e){return e.type===planType;});
-  if(opPlan)return {ok:true};
-
-  // Check 2: aangevinkt in materiaallijst?
-  const aangevinkt=extra.some(function(e){
-    if(!e.checked&&e.aantal<=0)return false;
-    const catItem=CATALOG.find(function(c){return c.id===e.id;});
-    return catItem&&catCats.includes(catItem.cat);
-  });
-  if(aangevinkt)return {ok:true};
-
-  return {ok:false, planType, naam:kop};
+function checkBlokGekoppeld(t){
+  var vrij=['Beregening','Aanpassing','Eigen blok','Graszoden'];
+  if(vrij.some(function(v){return t.toLowerCase().indexOf(v.toLowerCase())>=0;}))return{ok:true};
+  var proj=activeProjectId?getProjects().find(function(p){return p.id===activeProjectId;}):null;
+  var extra=proj?proj.extraMat||[]:[];
+  var kop={'Verpomping':{pt:'pump',cc:['Pompen']},'Diepteboring':{pt:'boring',cc:['Diepteboring']},'Waterbehandeling':{pt:'iron',cc:['Ontijzering']},'Regenmelder':{pt:'rainsensor',cc:['Controllers']},'Bodemvochtigheidssensor':{pt:'soilsensor',cc:['Controllers']},'Wifi':{pt:'wifimod',cc:['Controllers']},'Bronkraan':{pt:'tappost',cc:['Diversen']}};
+  var k=Object.keys(kop).find(function(x){return t.toLowerCase().indexOf(x.toLowerCase())>=0;});
+  if(!k)return{ok:true};
+  if(elements.some(function(e){return e.type===kop[k].pt;}))return{ok:true};
+  if(extra.some(function(e){if(!e.checked&&e.aantal<=0)return false;var c=CATALOG.find(function(x){return x.id===e.id;});return c&&kop[k].cc.includes(c.cat);}))return{ok:true};
+  return{ok:false,naam:k};
 }
-
 function openKlantOfferte(){
   var oc=document.getElementById('offerte-content');
   if(!oc)return;
-  var blokken=window._klantOfferteBlokken||buildKlantOfferteBlokken();
-  window._klantOfferteBlokken=blokken;
+  // Laad forfaitaire blokken uit eigen localStorage key
+  var _opgeslagenForfait=loadForfaitBlokken();
+  // Bouw blokken altijd opnieuw vanuit plan (blokken = wat ingetekend is)
+  // Bewaar enkel prijzen en omschrijvingen van bestaande blokken
+  var oudeBlokken=window._klantOfferteBlokken||[];
+  var nieuweBlokken=buildKlantOfferteBlokken();
+  // Herstel handmatig ingevoerde prijzen en omschrijvingen
+  nieuweBlokken.forEach(function(nb){
+    var oud=oudeBlokken.find(function(b){return b.titel===nb.titel;});
+    if(oud){
+      if(oud.prijs!==undefined&&oud.prijs!==0)nb.prijs=oud.prijs;
+      if(oud.omschrijving)nb.omschrijving=oud.omschrijving;
+      nb.actief=oud.actief;
+    }
+  });
+  // Voeg opgeslagen forfaitaire blokken toe
+  _opgeslagenForfait.forEach(function(ob){
+    if(!nieuweBlokken.some(function(nb){return nb.titel===ob.titel;})){
+      nieuweBlokken.push(ob);
+    }
+  });
+  window._klantOfferteBlokken=nieuweBlokken;
+  var blokken=nieuweBlokken;
   var geldig=window._klantOfferteGeldig||30;
 
   var html='<div style="background:var(--bl2);border-radius:8px;padding:12px;margin-bottom:12px;border:1px solid var(--bl)">'
     +'<div style="font-size:12px;font-weight:700;color:var(--bl);margin-bottom:8px">✏ Klantofferte — blokken bewerken</div>';
 
   blokken.forEach(function(blok,i){
-    var koppeling=checkBlokGekoppeld(blok.titel);
-    var geblokkeerd=!koppeling.ok&&!blok.actief;
-    var borderClr=geblokkeerd?'#f59e0b':'var(--bor2)';
-    var blokkeerMsg=geblokkeerd?'⚠ Voeg "'+koppeling.naam+'" toe aan het plan of materiaallijst om dit blok te activeren':'';
-    html+='<div style="background:var(--sur);border:1px solid '+borderClr+';border-radius:6px;padding:10px;margin-bottom:8px;'+(geblokkeerd?'opacity:0.75':'')+'">'      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'      +'<input type="checkbox" id="blok-actief-'+i+'" '+(blok.actief?'checked':'')+' '+(geblokkeerd?'disabled title="'+blokkeerMsg+'"':'')+' onchange="updateKlantBlok()" style="width:16px;height:16px">'      +'<input type="text" id="blok-titel-'+i+'" value="'+blok.titel.replace(/"/g,'&quot;')+'" onchange="updateKlantBlok()" style="flex:1;font-size:12px;font-weight:700;padding:4px 8px;border:1px solid var(--bor2);border-radius:4px;background:var(--sur);color:var(--tx)">'      +(geblokkeerd?'<span style="font-size:10px;color:#f59e0b;max-width:200px">'+blokkeerMsg+'</span>':'')+'</div>';
+    var kop=checkBlokGekoppeld(blok.titel);
+    var gblk=!kop.ok&&!blok.actief;
+    var bclr=gblk?'#f59e0b':'var(--bor2)';
+    html+='<div style="background:var(--sur);border:1px solid '+bclr+';border-radius:6px;padding:10px;margin-bottom:8px;'+(gblk?'opacity:0.75':'')+'">'      +'<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;flex-wrap:wrap">'      +(gblk?'<div style="width:100%;font-size:11px;color:#92400e;background:#fef3c7;border-radius:4px;padding:4px 8px;margin-bottom:4px">&#9888; Teken <b>'+(kop.naam||'dit element')+'</b> eerst in op het plan zodat alles klopt in materiaallijst en offerte.</div>':'')      +'<input type="checkbox" id="blok-actief-'+i+'" '+(blok.actief?'checked':'')+' '+(gblk?'disabled':'')+'  onchange="updateKlantBlok()" style="width:16px;height:16px;margin-top:2px">'
+      +'<input type="text" id="blok-titel-'+i+'" value="'+blok.titel.replace(/"/g,'&quot;')+'" onchange="updateKlantBlok()" style="flex:1;font-size:12px;font-weight:700;padding:4px 8px;border:1px solid var(--bor2);border-radius:4px;background:var(--sur);color:var(--tx)">'
+      +'<div style="display:flex;align-items:center;gap:4px"><span style="font-size:12px">€</span>'
+      +'<input type="number" id="blok-prijs-'+i+'" value="'+blok.prijs+'" onchange="updateKlantBlok()" style="width:90px;font-size:12px;font-weight:700;padding:4px 8px;border:1px solid var(--bor2);border-radius:4px;background:var(--sur);color:var(--tx);text-align:right"></div>'
+      +'</div>'
+      +'<textarea id="blok-omschr-'+i+'" rows="'+(i===0?5:3)+'" onchange="updateKlantBlok()" style="width:100%;font-size:11px;padding:6px;border:1px solid var(--bor2);border-radius:4px;background:var(--sur);color:var(--tx);box-sizing:border-box;resize:vertical">'+blok.omschrijving+'</textarea>'
+      +'</div>';
   });
 
   html+='<button class="ub" style="font-size:11px;width:100%;margin-top:4px" id="add-klant-blok-btn">+ Extra blok toevoegen</button>';
@@ -12052,6 +12015,7 @@ function updateKlantBlok(){
     if(prijs)blok.prijs=parseFloat(prijs.value)||0;
   });
   window._klantOfferteBlokken=blokken;
+  saveForfaitBlokken(blokken);
   renderKlantOffertePreview();
 }
 
@@ -12070,7 +12034,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v93</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v103</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -12122,9 +12086,35 @@ function generateOfferte(){
     if(vt.kmvergoeding>0&&verpl.km>0)vplLines.push({omschrijving:'Km-vergoeding',aantal:verpl.km*verpl.aantal,eenh:'km',ink:vt.kmvergoeding,marge:0,btw:21,margeAan:false});
   }
   if(vplLines.length){var s=renderOfferteSection('Verplaatsing',vplLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;}
+  // Forfaitaire posten als aparte sectie
+  var _forfait=loadForfaitBlokken();
+  var _forfaitActief=_forfait.filter(function(fb){return fb.actief;});
+  if(_forfaitActief.length>0){
+    var forfaitHtml='<div style="margin-top:12px;border:1px solid var(--bor2);border-radius:8px;overflow:hidden">'
+      +'<div style="background:var(--sur2);padding:8px 12px;font-weight:700;font-size:12px;border-bottom:1px solid var(--bor2)">Forfaitaire posten</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid var(--bor2)">'
+      +'<th style="text-align:left;padding:5px 8px">Omschrijving</th>'
+      +'<th style="text-align:right;padding:5px 8px">Excl. BTW</th>'
+      +'<th style="text-align:right;padding:5px 8px">BTW 21%</th>'
+      +'<th style="text-align:right;padding:5px 8px">Incl. BTW</th>'
+      +'</tr></thead><tbody>';
+    _forfaitActief.forEach(function(fb){
+      var fbEx=fb.prijs||0;
+      var fbBTW=fbEx*0.21;
+      grandEx+=fbEx;grandBTW+=fbBTW;
+      forfaitHtml+='<tr style="border-bottom:1px solid var(--bor2)">'
+        +'<td style="padding:5px 8px">'+fb.titel+'</td>'
+        +'<td style="padding:5px 8px;text-align:right">euro'+fbEx.toFixed(2)+'</td>'
+        +'<td style="padding:5px 8px;text-align:right;color:var(--tx2)">euro'+fbBTW.toFixed(2)+'</td>'
+        +'<td style="padding:5px 8px;text-align:right;font-weight:600">euro'+(fbEx+fbBTW).toFixed(2)+'</td>'
+        +'</tr>';
+    });
+    forfaitHtml+='</tbody></table></div>';
+    html+=forfaitHtml;
+  }
   html+='<div style="margin-top:16px;padding:12px;background:var(--bl2);border-radius:8px;border:2px solid var(--bl)">'
-    +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Subtotaal excl BTW</span><span style="font-weight:700">euro'+grandEx.toFixed(2)+'</span></div>'
-    +'<div style="display:flex;justify-content:space-between;color:var(--tx2)"><span>BTW</span><span>euro'+grandBTW.toFixed(2)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Subtotaal excl BTW</span><span style="font-weight:700">euro'+grandEx.toFixed(2)+'</span></div>';
+  html+='<div style="display:flex;justify-content:space-between;color:var(--tx2)"><span>BTW</span><span>euro'+grandBTW.toFixed(2)+'</span></div>'
     +'<div style="display:flex;justify-content:space-between;border-top:1px solid var(--bor2);padding-top:8px;margin-top:8px"><span style="font-size:14px;font-weight:700">TOTAAL incl BTW</span><span style="font-size:14px;font-weight:700;color:var(--bl)">euro'+(grandEx+grandBTW).toFixed(2)+'</span></div>'
     +'</div></div>';
   var oc=document.getElementById('offerte-content');if(oc)oc.innerHTML=html;
@@ -12590,19 +12580,27 @@ function renderOfferte(){
   const btwBedrag=subtotaal*btw/100;
   const totaalIncl=subtotaal+btwBedrag;
 
-  // Voeg forfaitaire blokken uit klantofferte toe aan interne offerte
-  const klantBlokken=window._klantOfferteBlokken||[];
-  const vrij=['Beregening gazon en beplanting','Aanpassing bestaande installatie','Eigen blok','Graszoden herstelling'];
-  const forfaitaireBlokken=klantBlokken.filter(function(b){
-    return b.actief && b.prijs>0 && !vrij.some(function(v){return b.titel.toLowerCase().indexOf(v.toLowerCase())>=0;});
+  // Voeg actieve blokken uit klantofferte toe aan interne offerte
+  // Laad forfaitaire blokken rechtstreeks uit eigen localStorage key
+  var forfaitUitStorage=loadForfaitBlokken();
+  var klantBlokken=window._klantOfferteBlokken||[];
+  // Voeg opgeslagen forfait blokken toe die nog niet in klantBlokken zitten
+  forfaitUitStorage.forEach(function(fb){
+    if(!klantBlokken.some(function(b){return b.titel===fb.titel;})){
+      klantBlokken.push(fb);
+    }
+  });
+  const uitgesloten=['Beregening gazon en beplanting'];
+  const forfaitBlokken=klantBlokken.filter(function(b){
+    return b.actief && !uitgesloten.some(function(v){return b.titel.toLowerCase().indexOf(v.toLowerCase())>=0;});
   });
   let subtotaalForfait=0;
-  forfaitaireBlokken.forEach(function(b){subtotaalForfait+=b.prijs;});
+  forfaitBlokken.forEach(function(b){subtotaalForfait+=b.prijs;});
   const subtotaalTotaal=subtotaal+subtotaalForfait;
   const btwTotaal=subtotaalTotaal*btw/100;
   const totaalInclTotaal=subtotaalTotaal+btwTotaal;
   window._lastQuoteRows=rows;
-  window._lastQuoteTotals={subtotaal,btw,btwBedrag,totaalIncl};
+  window._lastQuoteTotals={subtotaal:subtotaalTotaal,btw,btwBedrag:btwTotaal,totaalIncl:totaalInclTotaal};
   const logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="height:45px;object-fit:contain" alt="BuitenGewoon Water">`:'<b style="color:#0891b2;font-size:15px">BuitenGewoon Water</b>';
   let html=`<div id="offerte-doc" style="background:#fff;color:#111;padding:20px;border-radius:6px;border:1px solid #ddd;font-family:'Segoe UI',sans-serif">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0891b2">
@@ -12635,10 +12633,12 @@ function renderOfferte(){
   });
   html+=`</tbody></table>
     <div style="display:flex;justify-content:flex-end"><table style="font-size:12px;min-width:220px">
-      <tr><td style="padding:3px 8px;color:#666">Subtotaal ex. BTW</td><td style="padding:3px 8px;text-align:right;font-weight:600">€ ${subtotaal.toFixed(2)}</td></tr>
-      <tr><td style="padding:3px 8px;color:#666">BTW ${btw}%</td><td style="padding:3px 8px;text-align:right">€ ${btwBedrag.toFixed(2)}</td></tr>
+      <tr><td style="padding:3px 8px;color:#666">Subtotaal materialen ex. BTW</td><td style="padding:3px 8px;text-align:right;font-weight:600">€ ${subtotaal.toFixed(2)}</td></tr>
+      ${forfaitBlokken.length>0?forfaitBlokken.map(b=>`<tr><td style="padding:3px 8px;color:#666">${b.titel}</td><td style="padding:3px 8px;text-align:right;font-weight:600">€ ${b.prijs.toFixed(2)}</td></tr>`).join(''):''}
+      ${forfaitBlokken.length>0?`<tr style="border-top:1px solid var(--bor2)"><td style="padding:3px 8px;color:#666">Subtotaal ex. BTW</td><td style="padding:3px 8px;text-align:right;font-weight:600">€ ${subtotaalTotaal.toFixed(2)}</td></tr>`:''}
+      <tr><td style="padding:3px 8px;color:#666">BTW ${btw}%</td><td style="padding:3px 8px;text-align:right">€ ${btwTotaal.toFixed(2)}</td></tr>
       <tr style="border-top:2px solid #0891b2"><td style="padding:5px 8px;font-weight:700;font-size:13px">Totaal incl. BTW</td>
-        <td style="padding:5px 8px;text-align:right;font-weight:700;font-size:13px;color:#0891b2">€ ${totaalIncl.toFixed(2)}</td></tr>
+        <td style="padding:5px 8px;text-align:right;font-weight:700;font-size:13px;color:#0891b2">€ ${totaalInclTotaal.toFixed(2)}</td></tr>
     </table></div>
     ${rows.some(r=>r.sell===0)?'<div style="margin-top:10px;font-size:11px;color:#dc2626">⚠ Sommige artikelen hebben geen prijs. Vul aan via Bewerken → Prijzen.</div>':''}
   </div>`;
@@ -13410,13 +13410,29 @@ setTimeout(()=>updateNozzleList(), 200);
 function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')||'[]');}catch{return[];}}
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));}
 
+// ── FORFAITAIRE BLOKKEN OPSLAG ──
+function getForfaitKey(){return 'bp_forfait_'+(activeProjectId||'default');}
+function saveForfaitBlokken(blokken){
+  var forfait=blokken.filter(function(b){
+    return ['Aanpassing','Eigen blok'].some(function(v){return b.titel.toLowerCase().indexOf(v.toLowerCase())>=0;});
+  });
+  try{localStorage.setItem(getForfaitKey(),JSON.stringify(forfait));}catch(e){}
+}
+function loadForfaitBlokken(){
+  try{return JSON.parse(localStorage.getItem(getForfaitKey())||'[]');}catch(e){return [];}
+}
+
 function currentProjectData(){
-  return{elements,pipes,textNotes,plantZones,pxPerMeter,prices,counter,savedAt:new Date().toISOString()};
+  return{elements,pipes,textNotes,plantZones,pxPerMeter,prices,counter,savedAt:new Date().toISOString(),
+    klantOfferteBlokken:window._klantOfferteBlokken||null};
 }
 function loadProjectData(d){
   elements=d.elements||[];pipes=d.pipes||[];cables=d.cables||[];textNotes=d.textNotes||[];
-  plantZones=d.plantZones||[];pxPerMeter=d.pxPerMeter||100;if(d.pxPerMeter&&d.pxPerMeter!==100)_schaalIngesteld=true;
+  plantZones=d.plantZones||[];pxPerMeter=d.pxPerMeter||100;
+  if(d.pxPerMeter&&d.pxPerMeter!==100)_schaalIngesteld=true;
   prices=d.prices||{};counter=d.counter||{};
+  // Herstel klantofferte blokken
+  window._klantOfferteBlokken=d.klantOfferteBlokken||null;
   document.getElementById('scale-display').textContent=`1m = ${Math.round(pxPerMeter)}px`;
   updateCounts();redraw();selEl=null;updateSelPanel();
   // Show hint to reload background image
@@ -13777,7 +13793,7 @@ function renderProjectPanel(){
       const isActive=p.id===activeProjectId;
       const savedDate=p.savedAt?new Date(p.savedAt):null;
       const isVandaag=savedDate&&savedDate.toDateString()===new Date().toDateString();
-      const dateStr=savedDate?(isVandaag?'Vandaag '+savedDate.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'}):savedDate.toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+savedDate.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'})):'—';
+      const dateStr=savedDate?(isVandaag?'Vandaag '+savedDate.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'}):savedDate.toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+savedDate.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'})):'\u2014';
       const elCount=(p.data?.elements||[]).length,pipeCount=(p.data?.pipes||[]).length;
       const klantNaam=p.klant&&p.klant.naam?p.klant.naam:'';
       const klantGem=p.klant&&p.klant.gemeente?p.klant.gemeente:'';
@@ -14022,8 +14038,8 @@ function deleteSubplan(idx){
 }
 
 function autoSaveActiveProject(){
-  markeerPlanGewijzigd();
   if(!activeProjectId)return;
+  markeerPlanGewijzigd();
   saveCurrentSubplan();
   const projs=getProjects();
   const idx=projs.findIndex(function(p){return p.id===activeProjectId;});
@@ -14471,7 +14487,6 @@ function togglePipePanel(){
   }
 }
 function setPipeStyle(s){
-  if(s==='free'||s==='straight'){if(!checkSchaalIngesteld())return;}
   document.getElementById('pipe-style').value=s;
   ['straight','free'].forEach(x=>document.getElementById('ps-'+x).classList.toggle('on',x===s));
   window._pipeStyleSet=true;
@@ -14639,13 +14654,38 @@ document.addEventListener('keydown',e=>{
 </script>
 
 <!-- PROJECT MANAGER -->
+<div class="modal" id="proj-panel" style="max-width:740px;width:94vw">
+  <h2>📁 Beheer</h2>
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--bor2);margin-bottom:12px">
+    <button id="tab-proj-btn" onclick="switchBeheerTab('projecten')" style="padding:8px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:700;color:var(--bl);border-bottom:3px solid var(--bl);margin-bottom:-2px;font-family:inherit">Projecten</button>
+    <button id="tab-klant-btn" onclick="switchBeheerTab('klanten')" style="padding:8px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--tx2);border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit">Klanten</button>
+  </div>
+  <div id="proj-content"></div>
+  <div id="klant-content" style="display:none"></div>
 
+  <div class="mact"><div style="flex:1"></div><button class="ub" onclick="closeAll()">Sluiten</button></div>
+</div>
 
 <!-- FLOW/PRESSURE -->
-
+<div class="modal" id="flow-panel" style="max-width:620px;width:92vw">
+  <h2>📊 Analyse</h2>
+  <div id="flow-content"></div>
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bor2)">
+    <button class="b" onclick="closeAll();setTimeout(function(){openModal('coupling-panel');},100)" style="font-size:12px">🔌 Koppelschema controller bekijken</button>
+  </div>
+  <div class="mact"><div style="flex:1"></div><button class="ub" onclick="closeAll()">Sluiten</button></div>
+</div>
 
 <!-- COUPLING SCHEMA -->
-
+<div class="modal" id="coupling-panel" style="max-width:620px;width:92vw">
+  <h2>🔌 Koppelschema controller</h2>
+  <div id="coupling-content"></div>
+  <div class="mact">
+    <button class="ub" onclick="printCoupling()">Afdrukken</button>
+    <div style="flex:1"></div>
+    <button class="ub" onclick="closeAll()">Sluiten</button>
+  </div>
+</div>
 
 
 <div id="ctx-menu" style="display:none;position:fixed;background:var(--sur);border:1px solid var(--bor2);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.14);z-index:200;min-width:160px;padding:4px 0;font-size:12px">
@@ -14655,7 +14695,23 @@ document.addEventListener('keydown',e=>{
 </div>
 
 <!-- LOGO PANEL -->
-
+<div class="modal" id="logo-panel" style="min-width:300px">
+  <h2>🏷 Logo instellen</h2>
+  <div style="margin-bottom:10px">
+    <img id="logo-preview" style="max-width:120px;max-height:80px;border:1px solid var(--bor2);border-radius:var(--r);padding:4px;display:block">
+  </div>
+  <div style="margin-bottom:10px;display:flex;gap:6px">
+    <button class="ub" onclick="document.getElementById('logo-file').click()">📁 Uploaden</button>
+    <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="loadLogo(event)">
+    <button class="ub" onclick="logoDataUrl='';_logoImg=new Image();redraw();document.getElementById('logo-preview').src=''">✕ Verwijderen</button>
+  </div>
+  <label style="font-size:11px;color:var(--tx2)">Grootte: <b id="logo-size-val">80px</b></label>
+  <input type="range" min="40" max="300" step="10" id="logo-size" value="80" oninput="logoPos.w=parseInt(this.value);document.getElementById('logo-size-val').textContent=this.value+'px';redraw()" style="width:100%;accent-color:var(--bl);margin-bottom:8px">
+  <label style="font-size:11px;color:var(--tx2)">Transparantie: <b id="logo-op-val">70%</b></label>
+  <input type="range" min="0.1" max="1" step="0.05" id="logo-opacity" value="0.7" oninput="logoPos.opacity=parseFloat(this.value);document.getElementById('logo-op-val').textContent=Math.round(this.value*100)+'%';redraw()" style="width:100%;accent-color:var(--bl);margin-bottom:8px">
+  <p style="font-size:11px;color:var(--tx2)">💡 Sleep het logo op het plan (Selecteer-modus).</p>
+  <div class="mact"><button class="ub pri" onclick="closeAll()">OK</button><div style="flex:1"></div><button class="ub" onclick="closeAll()">Sluiten</button></div>
+</div>
 
 <!-- GENEREER PLAN MODAL -->
 <div class="modal" id="genereer-panel" style="max-width:580px;width:92vw">
@@ -14672,22 +14728,30 @@ document.addEventListener('keydown',e=>{
 </div>
 
 <!-- SUBZONE MODAL -->
+<div class="modal" id="subzone-panel" style="max-width:520px;width:92vw">
+  <h2>✂ Verdeel in subzones</h2>
+  <div id="subzone-content"></div>
+  <div class="mact" id="subzone-actions">
+    <div style="flex:1"></div>
+    <button class="ub" onclick="closeAll()">Annuleren</button>
+  </div>
+</div>
+
+
 
 
 <div class="modal-custom" id="prijslijst-panel" style="max-width:1200px;min-width:1100px;width:95vw;max-height:90vh">
   <h2>Prijslijst & Catalogus</h2>
   <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-shrink:0">
-    <input type="text" id="pl-search" placeholder="Zoeken in alle artikelen..." style="flex:1;padding:6px 10px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;background:var(--sur);color:var(--tx)" oninput="filterPrijslijst(this.value)">
+    <input type="text" id="pl-search" placeholder="Zoeken..." style="flex:1;padding:6px 10px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;background:var(--sur);color:var(--tx)" oninput="filterPrijslijst(this.value)">
     <select id="pl-cat" style="padding:6px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;background:var(--sur);color:var(--tx)" onchange="filterPrijslijst(document.getElementById('pl-search').value)">
-      <option value="">Alle categorieën</option>
+      <option value="">Alle categorieen</option>
     </select>
     <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap">
       <input type="checkbox" id="pl-alleen-zichtbaar" checked onchange="filterPrijslijst(document.getElementById('pl-search').value)">
       Enkel zichtbaar
     </label>
-    <button class="ub" onclick="document.getElementById('pl-alleen-zichtbaar').checked=false;filterPrijslijst('')" style="white-space:nowrap;font-size:11px">Toon alle</button>document.getElementById('pl-search').value)">
-      <option value="">Alle categorieen</option>
-    </select>
+    <button class="ub" onclick="document.getElementById('pl-alleen-zichtbaar').checked=false;filterPrijslijst('')" style="white-space:nowrap;font-size:11px">Toon alle</button>
     <button class="ub pri" onclick="savePrijslijst()">💾 Opslaan</button>
     <button class="ub" onclick="exportPrijslijst()">📤 Exporteer</button>
     <button class="ub" onclick="importPrijslijst()">📥 Importeer</button>
@@ -14741,10 +14805,11 @@ document.addEventListener('keydown',e=>{
   <div style="display:flex;gap:10px;margin-bottom:10px;flex-shrink:0;flex-wrap:wrap;align-items:center">
     <input type="text" id="off-klant" placeholder="Klantnaam" style="padding:5px 8px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;width:160px;background:var(--sur);color:var(--tx)">
     <input type="text" id="off-ref" placeholder="Projectnummer" style="padding:5px 8px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;width:130px;background:var(--sur);color:var(--tx)">
+    <input type="text" id="off-contactpersoon" placeholder="Contactpersoon" style="padding:5px 8px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;width:140px;background:var(--sur);color:var(--tx)" oninput="try{localStorage.setItem('bww_contactpersoon',this.value);}catch(e){}">
     <input type="date" id="off-datum" style="padding:5px 8px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;background:var(--sur);color:var(--tx)">
     <button class="ub pri" onclick="generateActiveOfferte()">Genereer offerte</button>
     <button class="ub" onclick="exportBlurredPlan()" title="Exporteer een vaag conceptplan met watermerk voor de klant">🗺 Conceptplan</button>
-    <button class="ub" onclick="closeAll()">Sluiten</button>
+    <button class="ub" onclick="try{autoSaveActiveProject();}catch(e){}closeAll()">Sluiten</button>
   </div>
   <div style="overflow-y:auto;flex:1" id="offerte-content"></div>
 </div>
@@ -14821,7 +14886,18 @@ if('serviceWorker' in navigator){
 </script>
 <script>
 // ── FILE SYSTEM ACCESS API ──
-var _fileHandle = null; // current open file handle
+var _fileHandle = null;
+var _offerteLaatsteGenereer=null,_planLaatsteWijziging=null;
+function markeerPlanGewijzigd(){
+  _planLaatsteWijziging=Date.now();
+  var btn=document.getElementById('offerte-btn');
+  if(btn&&_offerteLaatsteGenereer&&_planLaatsteWijziging>_offerteLaatsteGenereer){btn.style.borderColor='#f59e0b';btn.style.color='#92400e';btn.title='Plan gewijzigd - herbereken offerte';btn.textContent='&#128182; Offerte &#9888;';}
+}
+function markeerOfferteGegenereerd(){
+  _offerteLaatsteGenereer=Date.now();
+  var btn=document.getElementById('offerte-btn');
+  if(btn){btn.style.borderColor='';btn.style.color='';btn.title='';btn.textContent='&#128182; Offerte';}
+} // current open file handle
 var _settingsHandle = null; // current settings file handle
 var _settingsLoadedCount = null; // {klanten, medewerkers, prijzen} tellers bij laden
 
