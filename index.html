@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v116</title>
+<title>Beregeningsplan Editor v117</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v116 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v117 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -12270,11 +12270,10 @@ function _downloadInstallatiegidsHTML(data){
 }
 
 function _renderInstallatiegidsHTML(data){
-  // Render volledige HTML installatiegids voor print-naar-PDF
-  var logo = logoDataUrl ? '<img src="'+logoDataUrl+'" style="height:50px">' : '<b>BuitenGewoon Water</b>';
+  var logo = logoDataUrl ? '<img src="'+logoDataUrl+'" style="height:50px;max-width:200px;object-fit:contain">' : '<b style="color:#1e3a8a;font-size:16px">BuitenGewoon Water</b>';
   var zones_html = '';
   (data.zones||[]).forEach(function(z){
-    zones_html += '<h3>Zone '+z.nr+' — '+z.naam+' — Kring '+z.kring+' op controller</h3><ol>';
+    zones_html += '<h3>Zone '+z.nr+' \u2014 '+z.naam+' \u2014 Kring '+z.kring+' op controller</h3><ol>';
     (z.stappen||[]).forEach(function(s){ zones_html += '<li>'+s+'</li>'; });
     zones_html += '</ol>';
   });
@@ -12283,257 +12282,515 @@ function _renderInstallatiegidsHTML(data){
     schema_html += '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>';
   });
   schema_html += '</table>';
+  var mat_html = '';
+  if(data.materialen && data.materialen.length > 0){
+    mat_html = '<table><tr><th style="width:40px">\u2713</th><th>Artikel</th><th style="width:60px">Aantal</th><th style="width:60px">Eenheid</th></tr>';
+    data.materialen.forEach(function(m){ mat_html += '<tr><td>\u2610</td><td>'+m.naam+'</td><td>'+m.aantal+'</td><td>'+m.eenheid+'</td></tr>'; });
+    mat_html += '</table>';
+  } else {
+    mat_html = '<p>Zie de bijlage bij de offerte voor de volledige materiaallijst.</p>';
+  }
 
-  return `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
-<title>Installatiegids — ${data.naam}</title>
-<style>
-  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
-  @media print { .no-print{display:none} }
-  body { font-family: Arial, sans-serif; font-size: 10pt; color: #111; line-height: 1.5; }
-  h1 { color: #1e3a8a; font-size: 18pt; border-bottom: 2px solid #1e3a8a; padding-bottom: 6px; }
-  h2 { color: #1e3a8a; font-size: 13pt; margin-top: 18px; }
-  h3 { color: #1e40af; font-size: 11pt; }
-  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9pt; }
-  th { background: #1e3a8a; color: white; padding: 5px 8px; text-align: left; }
-  td { padding: 4px 8px; border: 0.5px solid #e5e7eb; }
-  tr:nth-child(even) td { background: #f3f4f6; }
-  .info-box { background: #dbeafe; border-left: 4px solid #1e3a8a; padding: 8px 12px; margin: 8px 0; font-size: 9pt; }
-  .warn-box { background: #fef3c7; border-left: 4px solid #d97706; padding: 8px 12px; margin: 8px 0; font-size: 9pt; }
-  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 16px; }
-  .titelblad { page-break-after: always; background: #1e3a8a; color: white; padding: 40px; min-height: 200px; }
-  .titelblad h1 { color: white; border-color: #3b82f6; font-size: 28pt; }
-  .toc { page-break-after: always; }
-  .sectie { page-break-before: always; }
-  .print-btn { position: fixed; bottom: 20px; right: 20px; background: #1e3a8a; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; z-index: 999; }
-</style></head><body>
-<button class="print-btn no-print" onclick="window.print()">🖨 Afdrukken / PDF</button>
+  var elem_rows = '';
+  var elemVelden = [
+    ['Waterbron', data.waterbron], ['Pomp', data.pomp], ['Filter', data.filter],
+    ['Drukregelaar', data.drukregelaar], ['Waterbehandeling', data.waterbehandeling],
+    ['Valvebox', data.valvebox], ['Controller', data.controller],
+    ['Regenmelder', data.regenmelder], ['Bodemvochtigheidssensor', data.bodemvocht],
+    ['Wifi-module', data.wifi], ['Bronkraan', data.bronkraan]
+  ];
+  elemVelden.forEach(function(v){ if(v[1] && v[1]!=='\u2014') elem_rows += '<tr><td>'+v[0]+'</td><td>'+v[1]+'</td></tr>'; });
 
-<div class="titelblad">
-  ${logo}
-  <h1 style="margin-top:40px">Installatiegids</h1>
-  <p style="font-size:14pt;color:#bfdbfe">Automatisch beregeningssysteem</p>
-  <p><b>Project:</b> ${data.naam}<br>
-  ${data.klant ? '<b>Klant:</b> '+data.klant+'<br>': ''}
-  ${data.adres ? '<b>Adres:</b> '+data.adres+'<br>': ''}
-  <b>Datum:</b> ${data.datum}</p>
-  <hr style="border-color:#3b82f6;margin-top:30px">
-  <p style="font-size:9pt;color:#93c5fd">BuitenGewoon Water · +32 468 32 85 71 · info@buitengewoonwater.com · buitengewoonwater.com</p>
-</div>
+  return '<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Installatiegids \u2014 '+data.naam+'</title><style>'
+  + '@page{size:A4;margin:20mm 18mm 20mm 18mm}'
+  + '@media print{.no-print{display:none}body{font-size:9.5pt}}'
+  + 'body{font-family:Arial,sans-serif;font-size:10pt;color:#111;line-height:1.5;margin:0;padding:0}'
+  + 'h1{color:#1e3a8a;font-size:17pt;border-bottom:2px solid #1e3a8a;padding-bottom:6px;margin-top:0}'
+  + 'h2{color:#1e3a8a;font-size:12pt;margin-top:16px;margin-bottom:4px}'
+  + 'h3{color:#1e40af;font-size:10.5pt;margin-top:10px;margin-bottom:3px}'
+  + 'p{margin:4px 0 6px 0}'
+  + 'ul,ol{margin:4px 0 6px 0;padding-left:20px}'
+  + 'li{margin-bottom:3px}'
+  + 'table{width:100%;border-collapse:collapse;margin:6px 0;font-size:9pt}'
+  + 'th{background:#1e3a8a;color:white;padding:5px 8px;text-align:left}'
+  + 'td{padding:4px 8px;border:0.5px solid #e5e7eb;vertical-align:top}'
+  + 'tr:nth-child(even) td{background:#f3f4f6}'
+  + '.info{background:#dbeafe;border-left:4px solid #1e3a8a;padding:7px 12px;margin:8px 0;font-size:9.5pt}'
+  + '.warn{background:#fef3c7;border-left:4px solid #d97706;padding:7px 12px;margin:8px 0;font-size:9.5pt}'
+  + '.sectie{page-break-before:always;padding-top:2px}'
+  + '.titelblad{background:#1e3a8a;color:white;padding:36px 40px;min-height:220px;page-break-after:always}'
+  + '.titelblad h1{color:white;border-color:#3b82f6;font-size:26pt}'
+  + '.toc{page-break-after:always}'
+  + '.pghdr{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e3a8a;padding-bottom:5px;margin-bottom:12px}'
+  + '.pghdr-r{font-size:8.5pt;color:#6b7280}'
+  + '.print-btn{position:fixed;bottom:20px;right:20px;background:#0891b2;color:white;padding:11px 18px;border:none;border-radius:8px;cursor:pointer;font-size:12px;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,.2)}'
+  + '</style></head><body>'
 
-<div class="toc">
-  <h1>Inhoudsopgave</h1>
-  <table style="font-size:10pt">
-    <tr><td><b>1</b></td><td><b>Inleiding</b></td></tr>
-    <tr><td><b>2</b></td><td><b>Voorbereiding</b></td></tr>
-    <tr><td style="color:#6b7280;padding-left:20px">2.1–2.5</td><td style="color:#6b7280">Gereedschap, waterbron, sleufwerk, veiligheid</td></tr>
-    <tr><td><b>3</b></td><td><b>Installatie</b></td></tr>
-    <tr><td style="color:#6b7280;padding-left:20px">3.1–3.17</td><td style="color:#6b7280">Stap voor stap installatie</td></tr>
-    <tr><td><b>4</b></td><td><b>Ingebruikstelling</b></td></tr>
-    <tr><td style="color:#6b7280;padding-left:20px">4.1–4.10</td><td style="color:#6b7280">Doorspoelen, testen, afstellen, programmeren</td></tr>
-    <tr><td><b>5</b></td><td><b>Projectspecifiek gedeelte</b></td></tr>
-    <tr><td><b>6</b></td><td><b>Winterklaar maken en opstart voorjaar</b></td></tr>
-    <tr><td><b>Bijlage</b></td><td><b>Materiaallijst</b></td></tr>
-  </table>
-</div>
+  // Afdrukknop
+  + '<button class="print-btn no-print" onclick="window.print()">\uD83D\uDDA8 Afdrukken / PDF opslaan</button>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Hoofdstuk 1 — Inleiding</h1>
-<p>Welkom bij de installatiegids voor jouw automatisch beregeningssysteem, ontworpen door BuitenGewoon Water. Deze gids begeleidt je stap voor stap bij de installatie op basis van het meegeleverde beregeningsplan.</p>
-<div class="warn-box">⚠ Lees deze gids volledig door voor je begint. Werk stap voor stap in de aangegeven volgorde.</div>
-<p>Niet alle elementen in deze gids zijn van toepassing op jouw installatie. Raadpleeg steeds het projectspecifieke gedeelte (Hoofdstuk 5).</p>
-<h2>Contact</h2>
-<table><tr><td><b>Telefoon</b></td><td>+32 468 32 85 71</td></tr>
-<tr><td><b>E-mail</b></td><td>info@buitengewoonwater.com</td></tr>
-<tr><td><b>Website</b></td><td>buitengewoonwater.com</td></tr></table>
-</div>
+  // ── TITELBLAD ──
+  + '<div class="titelblad">'
+  + logo
+  + '<h1 style="margin-top:36px">Installatiegids</h1>'
+  + '<p style="font-size:13pt;color:#bfdbfe;margin:0 0 20px 0">Automatisch beregeningssysteem</p>'
+  + '<p style="font-size:10.5pt;line-height:1.8">'
+  + '<b style="color:#93c5fd">Project:</b> <span style="color:white">'+data.naam+'</span><br>'
+  + (data.klant ? '<b style="color:#93c5fd">Klant:</b> <span style="color:white">'+data.klant+'</span><br>' : '')
+  + (data.adres ? '<b style="color:#93c5fd">Adres:</b> <span style="color:white">'+data.adres+'</span><br>' : '')
+  + '<b style="color:#93c5fd">Datum:</b> <span style="color:white">'+data.datum+'</span>'
+  + '</p>'
+  + '<hr style="border:none;border-top:1px solid #3b82f6;margin:24px 0 10px 0">'
+  + '<p style="font-size:9pt;color:#93c5fd;margin:0">BuitenGewoon Water &nbsp;&middot;&nbsp; +32 468 32 85 71 &nbsp;&middot;&nbsp; info@buitengewoonwater.com &nbsp;&middot;&nbsp; buitengewoonwater.com</p>'
+  + '</div>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Hoofdstuk 2 — Voorbereiding</h1>
-<h2>2.1 Benodigde gereedschappen</h2>
-<ul>
-<li>Schop en/of grondfrees voor het graven van sleuven</li>
-<li>Leidingsnijder of stanleymes — geen zaag, ruwe sneden lekken</li>
-<li>Schroevendraaiers (plat en kruis)</li>
-<li>Speciale Rain Bird-schroevendraaier voor rotoren en popups — meegeleverd, bewaar ook voor onderhoud</li>
-<li>Moersleutels (verstelbaar), waterpas, meetlint</li>
-<li>Boor + schroeven, teflon tape, emmer en handdoek</li>
-</ul>
-<h2>2.2 Waterbron</h2>
-<h3>Leidingwater</h3>
-<ul>
-<li>Aansluiting via T-stuk op bestaand drinkwaternet</li>
-<li><b>Wettelijk verplicht:</b> terugslagklep direct na aftakking</li>
-<li>Melding bij drinkwatermaatschappij vereist</li>
-</ul>
-<h3>Putwater / grondwater / regenwater</h3>
-<ul>
-<li>Aansluiting via bronpomp (zie plan)</li>
-<li>Controleer waterpeil voor opstart — drooglopende pomp kan permanent beschadigd raken</li>
-</ul>
-<h2>2.3 Bronpomp (indien van toepassing)</h2>
-<ol><li>Installeer pomp op aangegeven positie</li><li>Verbind met hoofdleiding</li><li>Sluit pompstartrelais aan op controller</li><li>Stel drukschakelaar in op 2,5–4 bar</li></ol>
-<h2>2.4 Opgravingsdiepte</h2>
-<table><tr><th>Leidingtype</th><th>Min. diepte</th></tr>
-<tr><td>Hoofdleiding Ø32/40mm</td><td>50–60 cm</td></tr>
-<tr><td>Zijleidingen Ø25/32mm</td><td>40 cm</td></tr>
-<tr><td>Druppeldarm</td><td>10–15 cm</td></tr>
-<tr><td>Beregeningskabel</td><td>40 cm (in wachtbuis)</td></tr></table>
-<p>Laag zand van 5 cm onderaan de sleuf. <b>Sleuven open laten tot na de watertest.</b></p>
-<h2>2.5 Veiligheid</h2>
-<div class="warn-box">⚠ Raadpleeg KLIM (klim.be) voor het graven — controleer op gas, elektriciteit en riool.</div>
-<ul><li>Watertoevoer afsluiten voor leidingwerk</li><li>Niet werken met elektriciteit bij nat weer</li><li>230V aansluiting: erkend elektricien indien twijfel</li></ul>
-</div>
+  // ── INHOUDSOPGAVE ──
+  + '<div class="toc">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Inhoudsopgave</h1>'
+  + '<table style="font-size:10pt"><tbody>'
+  + '<tr><td style="width:60px;color:#1e3a8a;font-weight:700">1</td><td style="font-weight:700;color:#1e3a8a">Inleiding</td></tr>'
+  + '<tr><td style="color:#1e3a8a;font-weight:700">2</td><td style="font-weight:700;color:#1e3a8a">Voorbereiding</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">2.1</td><td style="color:#6b7280">Benodigde gereedschappen</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">2.2</td><td style="color:#6b7280">Waterbron</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">2.3</td><td style="color:#6b7280">Bronpomp installeren</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">2.4</td><td style="color:#6b7280">Opgravingsdiepte en sleufwerk</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">2.5</td><td style="color:#6b7280">Veiligheid</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">2.6</td><td style="color:#6b7280">Materialen</td></tr>'
+  + '<tr><td style="color:#1e3a8a;font-weight:700">3</td><td style="font-weight:700;color:#1e3a8a">Installatie</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">3.1&ndash;3.17</td><td style="color:#6b7280">Stap voor stap installatie</td></tr>'
+  + '<tr><td style="color:#1e3a8a;font-weight:700">4</td><td style="font-weight:700;color:#1e3a8a">Ingebruikstelling</td></tr>'
+  + '<tr><td style="padding-left:20px;color:#6b7280">4.1&ndash;4.10</td><td style="color:#6b7280">Doorspoelen, testen, afstellen, programmeren</td></tr>'
+  + '<tr><td style="color:#1e3a8a;font-weight:700">5</td><td style="font-weight:700;color:#1e3a8a">Projectspecifiek gedeelte</td></tr>'
+  + '<tr><td style="color:#1e3a8a;font-weight:700">6</td><td style="font-weight:700;color:#1e3a8a">Winterklaar maken en opstart voorjaar</td></tr>'
+  + '<tr><td style="color:#1e3a8a;font-weight:700">Bijlage</td><td style="font-weight:700;color:#1e3a8a">Materiaallijst</td></tr>'
+  + '</tbody></table></div>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Hoofdstuk 3 — Installatie</h1>
-<div class="info-box"><b>Volg de volgorde nauwgezet.</b> Sleuven open tot na de watertest. Sproeierkoppen pas na doorspoelen.</div>
-<h2>3.1 Wateraansluiting</h2>
-<p><b>Leidingwater:</b> Terugslagklep → afsluiter → filter → drukregelaar</p>
-<p><b>Putwater:</b> Pomp → terugslagklep → afsluiter → filter → drukregelaar</p>
-<h2>3.2 Filter (indien van toepassing)</h2>
-<ul><li>Vóór magneetkleppen, na hoofdkraan</li><li>Let op doorstroomrichting (pijl)</li><li>Filterelement periodiek reinigen</li></ul>
-<h2>3.3 Drukregelaar (indien van toepassing)</h2>
-<ul><li>Na filter, vóór magneetkleppen</li><li><b>2,5–3 bar voor sproeiers, 1,5–2 bar voor druppeldarm</b></li></ul>
-<h2>3.4 Ontijzering (indien van toepassing)</h2>
-<ul><li>Altijd vóór magneetkleppen</li><li>Volg de bijgeleverde handleiding</li></ul>
-<h2>3.5–3.6 Hoofdleiding en valvebox</h2>
-<ol><li>Sleuf graven (50–60 cm) + laag zand</li><li>PE leiding van wateraansluiting naar valvebox</li><li>Valvebox waterpas plaatsen — deksel gelijk met maaiveld</li><li>Magneetkleppen installeren (pijl = doorstroomrichting)</li><li>Bekabeling nog niet aansluiten</li></ol>
-<h2>3.7 Regenmelder (indien van toepassing)</h2>
-<ul><li>Vrij liggende buitenplaats, 1,5–2 m hoog, niet onder dakrand of boom</li><li>Kabel naar controller via gevel</li></ul>
-<h2>3.8–3.9 Zijleidingen en PE-techniek</h2>
-<ol><li>Sleuven per zone (40 cm) + zand</li><li>Leiding van valvebox naar verste sproeier</li><li>T-stukken waar leidingen splitsen</li></ol>
-<p><b>PE klemkoppelingen:</b> Rechte snede → ontbramen → duwen tot klik → controleer vergrendeling → test met water.</p>
-<p><b>Draadverbindingen:</b> 3–4 lagen teflon tape met de klok mee. Hand vast + halve slag met sleutel.</p>
-<h2>3.10 Sproeierposities</h2>
-<ol><li>Markeer met meetlint en plan</li><li>KwikTap zadel op leiding</li><li>12.5mm aansluitslang (±1 m) naar behuizing</li><li>Behuizing gelijk met maaiveld</li><li><b>Kop nog niet erop — eerst doorspoelen</b></li></ol>
-<h2>3.11 Micro-sproeiers (indien van toepassing)</h2>
-<ul><li>Op paal of steker op aangegeven positie</li><li>Hoogte zodat sproeistraal planten bereikt</li></ul>
-<h2>3.12 Druppeldarm</h2>
-<ol><li>Rijen met rijafstand uit plan (typisch 30 cm)</li><li>Begin met contourrij langs de rand</li><li>Aansluiting via T-stuk en 16mm verbinder</li><li>Max. ±50 m per rij</li><li>Grondankers, eindstops</li><li><b>Ontluchtingsventiel op hoogste punt</b></li><li>Blinde darm voor overbruggingen</li><li>Afdekken met 5 cm mulch/boomschors</li></ol>
-<h2>3.13 Bodemvochtigheidssensor (indien van toepassing)</h2>
-<ul><li>Representatief deel tuin, niet naast sproeier</li><li>Diepte: 10–15 cm gazon, 20–30 cm beplanting</li><li>24 uur acclimatiseren voor ingebruikstelling</li></ul>
-<h2>3.14 Beregeningskabel</h2>
-<ul><li>In wachtbuis, minimaal 40 cm diep</li><li>Elke ader = één zone + COM-ader gemeenschappelijk</li><li>Gel-gevulde draadverbinders voor ondergronds gebruik</li><li><b>Noteer welke ader bij welke zone hoort — ook op binnenzijde valvebox-deksel</b></li></ul>
-<h2>3.15 Bronkraan met paaltje (indien van toepassing)</h2>
-<ul><li>T-stuk op hoofdleiding op aangegeven positie</li><li>Paaltje waterpas ingraven</li></ul>
-<h2>3.16–3.17 Controller en wifi-module</h2>
-<ol><li>Controller monteren op droge, beschermde locatie</li><li>Beregeningskabel aansluiten: zone → klem, COM → gemeenschappelijke klem</li><li>Regenmelder, sensor, wifi-module aansluiten</li><li>Pompstartrelais aansluiten indien aanwezig</li><li>230V op geaard stopcontact</li></ol>
-<h3>Rain Bird LNK2:</h3>
-<ol><li>Module in accessoirepoort (plug & play)</li><li>Rain Bird app downloaden (Android/iOS)</li><li>"Controller toevoegen" → "LNK2/WiFi"</li><li><b>Let op: alleen 2,4 GHz netwerk, niet 5 GHz</b></li><li>Optioneel: weerstation koppelen (30% waterbesparing)</li></ol>
-<h3>Hunter Hydrawise (HC/Pro-HC):</h3>
-<ol><li>Controller aan → wifi-setup op display</li><li>Account aanmaken op hydrawise.com</li><li>Hydrawise app → "Controller toevoegen" → serienummer invoeren</li><li>Predictive Watering activeren</li></ol>
-</div>
+  // ── H1 INLEIDING ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Hoofdstuk 1 &mdash; Inleiding</h1>'
+  + '<p>Welkom bij de installatiegids voor jouw automatisch beregeningssysteem, ontworpen door BuitenGewoon Water. Deze gids begeleidt je stap voor stap bij de installatie op basis van het meegeleverde beregeningsplan.</p>'
+  + '<div class="warn"><b>\u26A0 Lees deze gids volledig door voor je begint.</b> Werk stap voor stap in de aangegeven volgorde &mdash; sla geen stappen over.</div>'
+  + '<p>De gids bestaat uit twee delen:</p>'
+  + '<ul><li>Een <b>algemeen gedeelte</b> (Hoofdstukken 2&ndash;4) met uitleg over voorbereiding, gereedschap en technieken die altijd van toepassing zijn</li>'
+  + '<li>Een <b>projectspecifiek gedeelte</b> (Hoofdstuk 5) dat automatisch gegenereerd is op basis van jouw plan &mdash; met de exacte zones, sproeiers, leidingen en elementen in de juiste installatievolgorde</li></ul>'
+  + '<div class="info">Niet alle elementen in deze gids zijn van toepassing op jouw installatie. Raadpleeg steeds het projectspecifieke gedeelte (Hoofdstuk 5) voor wat van toepassing is op jouw project.</div>'
+  + '<h2>Contact</h2>'
+  + '<table><tbody><tr><td style="width:120px"><b>Telefoon</b></td><td>+32 468 32 85 71</td></tr>'
+  + '<tr><td><b>E-mail</b></td><td>info@buitengewoonwater.com</td></tr>'
+  + '<tr><td><b>Website</b></td><td>buitengewoonwater.com</td></tr></tbody></table>'
+  + '</div>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Hoofdstuk 4 — Ingebruikstelling</h1>
-<h2>4.1 Leidingen doorspoelen — VERPLICHTE EERSTE STAP</h2>
-<div class="warn-box">⚠ Spoel de leidingen door VOOR je sproeierkoppen plaatst. Zand en zaagsel verstoppen anders sproeiers en magneetkleppen.</div>
-<ol><li>Zijleiding open aan verste uiteinde (kop nog niet erop)</li><li>Zone activeren via handmatige override op magneetklep (knop/hendel draaien)</li><li>30–60 sec laten doorstromen tot water helder is</li><li>Herhaal voor elke zone</li><li>Daarna pas sproeierkoppen plaatsen</li></ol>
-<h2>4.2 Watertest</h2>
-<ul><li>Hoofdkraan <b>langzaam</b> openen (waterslag vermijden)</li><li>Alle koppelingen, valvebox, pomp controleren op lekken</li><li>Lekken herstellen voor je verdergaat</li></ul>
-<h2>4.3 Popup sproeiers afstellen</h2>
-<h3>Startpositie:</h3><p>Draai de behuizing in de grond richting de eerste rand die de sproeier moet bereiken.</p>
-<h3>Arc:</h3><p>Instelring bovenop: <b>linksom = groter, rechtsom = kleiner.</b> Standaard 180°.</p>
-<h3>Straal:</h3><p>Rain Bird-schroevendraaier in gleuf bovenop nozzle: <b>rechtsom = kleiner, linksom = groter.</b> Stel in op 30% overlap.</p>
-<h3>Reinigen:</h3><ol><li>Kop eraf (linksom)</li><li>Nozzle eruit (linksom)</li><li>Spoelen + tandenstoker voor gaatjes</li><li>Filterzeefje reinigen</li></ol>
-<h2>4.4 Rotoren afstellen</h2>
-<h3>Omhoogtrekken:</h3><p>Schroevendraaier in "Pull-up" slotje → 90° draaien → klikt vast.</p>
-<h3>Startpositie:</h3><p>Behuizing draaien in grond tot gewenste startrichting.</p>
-<h3>Arc:</h3><p>Instelring bovenop: <b>met klok mee = kleiner, tegen klok in = groter.</b> 40°–360°.</p>
-<h3>Straal:</h3><p>Gleuf bovenop: <b>rechtsom = kleiner, linksom = groter.</b></p>
-<h3>Reinigen:</h3><ol><li>Kop eraf (linksom)</li><li>Spoelen + filterzeefje</li><li>Hardnekkig vuil: 30 min weken</li></ol>
-<h2>4.5 Druppeldarm</h2>
-<ul><li>Gelijkmatige bevochtiging controleren</li><li>Ontluchtingsventielen: open bij vullen, dicht bij druk</li></ul>
-<h2>4.6 Controller programmeren</h2>
-<table><tr><th>Zone</th><th>Aanbevolen looptijd</th></tr>
-<tr><td>Gazon popup</td><td>15–20 min</td></tr>
-<tr><td>Gazon rotoren</td><td>20–30 min</td></tr>
-<tr><td>Druppeldarm</td><td>30–45 min</td></tr>
-<tr><td>Micro-sproeiers</td><td>20–30 min</td></tr></table>
-<p>Starttijd: 05:00–07:00. Zomer: dagelijks. Voor-/najaar: om de 2 dagen.</p>
-<p><b>Cycle & Soak:</b> bij hellingen of zware grond — bv. 3× 7 min met 20 min pauze i.p.v. 1× 20 min.</p>
-<h2>4.7 Dekkingscontrole</h2>
-<ul><li>Elke zone nalopen terwijl actief</li><li>Geen droge of overmatig natte plekken</li><li>Straal en arc aanpassen waar nodig</li></ul>
-<h2>4.8 Sleuven dichtmaken</h2>
-<div class="warn-box">⚠ Pas sluiten als alles getest is en er geen lekken zijn.</div>
-<ol><li>10 cm zand rondom leidingen</li><li>Daarna aarde, stapsgewijs aanstampen</li><li>Bestrating/begroeiing herstellen</li></ol>
-</div>
+  // ── H2 VOORBEREIDING ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Hoofdstuk 2 &mdash; Voorbereiding</h1>'
+  + '<h2>2.1 Benodigde gereedschappen</h2>'
+  + '<ul>'
+  + '<li>Schop en/of grondfrees voor het graven van sleuven</li>'
+  + '<li>Leidingsnijder of stanleymes voor PE leidingen &mdash; gebruik <b>geen zaag</b>, ruwe sneden lekken</li>'
+  + '<li>Schroevendraaiers (plat en kruis)</li>'
+  + '<li>Speciale Rain Bird-schroevendraaier voor rotoren en popup sproeiers &mdash; meegeleverd bij de sproeiers. Bewaar deze ook voor later onderhoud.</li>'
+  + '<li>Moersleutels (verstelbaar)</li>'
+  + '<li>Waterpas en meetlint</li>'
+  + '<li>Boor + schroeven voor bevestiging valvebox en controller</li>'
+  + '<li>Teflon tape voor draadverbindingen</li>'
+  + '<li>Emmer en handdoek voor restwater bij leidingwerk</li>'
+  + '</ul>'
+  + '<h2>2.2 Waterbron</h2>'
+  + '<p>Welke waterbron van toepassing is staat op jouw plan.</p>'
+  + '<h3>Leidingwater (stadswater)</h3>'
+  + '<ul>'
+  + '<li>Aansluiting via T-stuk of aftakkraan op het bestaande drinkwaternet</li>'
+  + '<li><b>Wettelijk verplicht:</b> installeer een terugslagklep direct na de aftakking om terugstroming naar het drinkwaternet te voorkomen</li>'
+  + '<li>Aansluiting van beregening op leidingwater vereist een melding bij de drinkwatermaatschappij &mdash; doe dit voor je begint</li>'
+  + '</ul>'
+  + '<h3>Putwater / grondwater / regenwater</h3>'
+  + '<ul>'
+  + '<li>Aansluiting via bronpomp (zie plan voor type en locatie)</li>'
+  + '<li>De pomp wordt automatisch aangestuurd via een pompstartrelais op de controller</li>'
+  + '<li>Controleer het waterpeil in de put voor je opstart &mdash; een drooglopende pomp kan permanent beschadigd raken</li>'
+  + '<li>Afhankelijk van de waterkwaliteit kan een ontijzeringsfilter aanwezig zijn (zie plan) &mdash; installeer deze altijd v&oacute;&oacute;r de magneetkleppen</li>'
+  + '</ul>'
+  + '<h2>2.3 Bronpomp installeren (indien van toepassing)</h2>'
+  + '<ol>'
+  + '<li>Installeer de pomp op de aangegeven positie (zie plan voor type en exacte locatie)</li>'
+  + '<li>Verbind de pompuitgang met de hoofdleiding via de meegeleverde koppelingen</li>'
+  + '<li>Sluit het pompstartrelais aan op de daarvoor voorziene klem op de controller (zie handleiding controller)</li>'
+  + '<li>Stel de drukschakelaar in op het aanbevolen bereik &mdash; typisch 2,5&ndash;4 bar voor beregeningssystemen</li>'
+  + '<li>Test de pomp kort na installatie &mdash; controleer op lekken en bevestig dat de pomp water opvoert</li>'
+  + '</ol>'
+  + '<h2>2.4 Opgravingsdiepte en sleufwerk</h2>'
+  + '<table><thead><tr><th>Leidingtype</th><th>Minimale diepte</th></tr></thead><tbody>'
+  + '<tr><td>Hoofdleiding &Oslash;32 of &Oslash;40mm</td><td>50&ndash;60 cm</td></tr>'
+  + '<tr><td>Zijleidingen per zone &Oslash;25 of &Oslash;32mm</td><td>40 cm</td></tr>'
+  + '<tr><td>Druppeldarm leidingen</td><td>10&ndash;15 cm (of op grond onder mulch)</td></tr>'
+  + '<tr><td>Beregeningskabel</td><td>40 cm (bij voorkeur in wachtbuis)</td></tr>'
+  + '</tbody></table>'
+  + '<ul>'
+  + '<li>Graaf zo smal mogelijk &mdash; een smalle sleuf is makkelijker te herstellen</li>'
+  + '<li>Leg onderaan de sleuf een laag zand van 5 cm &mdash; dit beschermt de leidingen tegen scherpe stenen</li>'
+  + '<li><b>Laat alle sleuven open tot na de watertest (stap 4.2)</b></li>'
+  + '</ul>'
+  + '<h2>2.5 Veiligheid</h2>'
+  + '<div class="warn">\u26A0 Raadpleeg KLIM (klim.be) voor je begint met graven &mdash; controleer op gas, elektriciteit en riool in de grond. Graaf de eerste 30 cm voorzichtig met de hand op onbekende locaties.</div>'
+  + '<ul>'
+  + '<li>Sluit de watertoevoer af voor je begint aan leidingwerk</li>'
+  + '<li>Werk nooit met elektriciteit (controller, magneetkleppen) bij nat weer</li>'
+  + '<li>De controller werkt op laagspanning (24V) maar heeft een netstransformator nodig. Laat de aansluiting op 230V uitvoeren door een erkend elektricien als je er niet zeker van bent.</li>'
+  + '</ul>'
+  + '<h2>2.6 Materialen</h2>'
+  + '<p>De volledige materiaallijst staat als bijlage bij jouw offerte en ook achteraan deze gids. Controleer voor je begint of alle materialen aanwezig zijn &mdash; vink af terwijl je installeert.</p>'
+  + '</div>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Hoofdstuk 5 — Projectspecifiek gedeelte</h1>
-<div class="info-box">Dit hoofdstuk is specifiek gegenereerd voor jouw project op basis van het beregeningsplan van BuitenGewoon Water.</div>
-<h2>5.1 Overzicht installatie</h2>
-<table><tr><th>Element</th><th>Details</th></tr>
-<tr><td>Waterbron</td><td>${data.waterbron}</td></tr>
-${data.pomp!=='—'?'<tr><td>Pomp</td><td>'+data.pomp+'</td></tr>':''}
-${data.filter!=='—'?'<tr><td>Filter</td><td>'+data.filter+'</td></tr>':''}
-${data.drukregelaar!=='—'?'<tr><td>Drukregelaar</td><td>'+data.drukregelaar+'</td></tr>':''}
-${data.waterbehandeling!=='—'?'<tr><td>Waterbehandeling</td><td>'+data.waterbehandeling+'</td></tr>':''}
-${data.valvebox!=='—'?'<tr><td>Valvebox</td><td>'+data.valvebox+'</td></tr>':''}
-${data.controller!=='—'?'<tr><td>Controller</td><td>'+data.controller+'</td></tr>':''}
-${data.regenmelder!=='—'?'<tr><td>Regenmelder</td><td>'+data.regenmelder+'</td></tr>':''}
-${data.bodemvocht!=='—'?'<tr><td>Bodemvochtigheidssensor</td><td>'+data.bodemvocht+'</td></tr>':''}
-${data.wifi!=='—'?'<tr><td>Wifi-module</td><td>'+data.wifi+'</td></tr>':''}
-${data.bronkraan!=='—'?'<tr><td>Bronkraan</td><td>'+data.bronkraan+'</td></tr>':''}
-</table>
-<h2>5.2 Hoofdleiding</h2>
-<table><tr><th>Van</th><th>Naar</th><th>Diameter</th><th>Lengte</th></tr>
-<tr><td>Wateraansluiting</td><td>Valvebox</td><td>${data.hoofdleiding_dia}</td><td>${data.hoofdleiding_lengte} m</td></tr></table>
-<h2>5.3 Installatievolgorde per zone</h2>
-<div class="info-box"><b>Volgorde:</b> Leg eerst alle zijleidingen van alle zones. Dan druppeldarm. Sproeierkoppen pas na doorspoelen (§4.1).</div>
-${zones_html}
-<h2>5.4 Koppelschema controller</h2>
-${schema_html}
-</div>
+  // ── H3 INSTALLATIE ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Hoofdstuk 3 &mdash; Installatie</h1>'
+  + '<div class="info"><b>Volg de volgorde nauwgezet.</b> Laat alle sleuven open tot na de watertest. Sluit de sproeierkoppen pas aan na het doorspoelen van de leidingen (&sect;4.1).</div>'
+  + '<h2>3.1 Wateraansluiting en hoofdkraan</h2>'
+  + '<p><b>Leidingwater:</b> installeer in deze volgorde na de aftakking:</p>'
+  + '<p style="margin-left:16px">Terugslagklep &rarr; handmatige afsluiter &rarr; filter (indien aanwezig) &rarr; drukregelaar (indien aanwezig)</p>'
+  + '<p><b>Putwater:</b> installeer in deze volgorde na de pomp:</p>'
+  + '<p style="margin-left:16px">Pomp &rarr; terugslagklep &rarr; handmatige afsluiter &rarr; filter (indien aanwezig) &rarr; drukregelaar (indien aanwezig)</p>'
+  + '<p>De handmatige afsluiter laat je toe het beregeningssysteem af te sluiten zonder de rest van de watertoevoer te onderbreken.</p>'
+  + '<h2>3.2 Filter installeren (indien van toepassing)</h2>'
+  + '<p>Een filter beschermt de magneetkleppen en sproeiers tegen vuil en zanddeeltjes &mdash; zeker belangrijk bij putwater.</p>'
+  + '<ul>'
+  + '<li>Installeer v&oacute;&oacute;r de magneetkleppen, na de hoofdkraan</li>'
+  + '<li>Let op de doorstroomrichting (pijl op het filterhuis)</li>'
+  + '<li>Het filterelement moet periodiek gereinigd worden &mdash; noteer de locatie</li>'
+  + '</ul>'
+  + '<h2>3.3 Drukregelaar installeren (indien van toepassing)</h2>'
+  + '<p>Een drukregelaar beschermt de installatie bij te hoge waterdruk en zorgt voor een gelijkmatige werking.</p>'
+  + '<ul>'
+  + '<li>Installeer na de filter, v&oacute;&oacute;r de magneetkleppen</li>'
+  + '<li>Instelling: <b>2,5&ndash;3 bar voor sproeiers</b>, <b>1,5&ndash;2 bar voor druppeldarm</b></li>'
+  + '<li>Bij zowel sproeiers als druppeldarm in aparte zones: een separate drukregelaar per zone kan nodig zijn &mdash; zie plan</li>'
+  + '</ul>'
+  + '<h2>3.4 Ontijzering installeren (indien van toepassing)</h2>'
+  + '<ul>'
+  + '<li>Installeer altijd v&oacute;&oacute;r de magneetkleppen</li>'
+  + '<li>Volg de handleiding van het apparaat voor elektrische aansluiting en regeneratie-instellingen</li>'
+  + '<li>Zorg voor voldoende ruimte rondom het apparaat voor onderhoud</li>'
+  + '</ul>'
+  + '<h2>3.5 Hoofdleiding aanleggen</h2>'
+  + '<ol>'
+  + '<li>Graaf de sleuf (50&ndash;60 cm diep) en leg een laag zand van 5 cm onderaan</li>'
+  + '<li>Leg de PE leiding van de wateraansluiting naar de valvebox</li>'
+  + '<li>Verbind segmenten via klemkoppelingen (zie &sect;3.9 voor techniek)</li>'
+  + '<li>Laat de uiteinden uitsteken aan de valvebox-zijde</li>'
+  + '</ol>'
+  + '<h2>3.6 Valvebox plaatsen</h2>'
+  + '<p>De valvebox bevat de magneetkleppen die elke zone apart aansturen.</p>'
+  + '<ol>'
+  + '<li>Graaf een put op de aangegeven positie (zie plan)</li>'
+  + '<li>Plaats de valvebox waterpas &mdash; bovenkant deksel gelijk met of licht boven het maaiveld</li>'
+  + '<li>Sluit de hoofdleiding aan op de ingang van de magneetkleppen</li>'
+  + '<li>Installeer de magneetkleppen (één per zone) &mdash; let op de doorstroomrichting (pijl op de klep)</li>'
+  + '<li><b>Bekabeling nog niet aansluiten</b> &mdash; dat doen we bij stap 3.14</li>'
+  + '</ol>'
+  + '<h2>3.7 Regenmelder installeren (indien van toepassing)</h2>'
+  + '<p>De regenmelder onderbreekt de beregening automatisch bij regen.</p>'
+  + '<ul>'
+  + '<li>Monteer op een vrij liggende buitenplaats &mdash; <b>niet</b> onder een dakrand, boom of luifel &mdash; op een hoogte van 1,5&ndash;2 m</li>'
+  + '<li>Zorg dat de sensor vol in de open lucht staat zodat hij echte neerslag registreert</li>'
+  + '<li>Trek de kabel naar de controller &mdash; bij voorkeur langs de gevel in een buisje</li>'
+  + '<li>Sluit aan op de sensor-ingang van de controller (zie handleiding controller)</li>'
+  + '</ul>'
+  + '<h2>3.8 Zijleidingen aanleggen</h2>'
+  + '<p>Vanuit de valvebox loopt per zone één zijleiding naar de sproeiers of druppeldarm.</p>'
+  + '<ul>'
+  + '<li>Graaf sleuven per zone (minimaal 40 cm diep) + laag zand onderaan</li>'
+  + '<li>Leg de leidingen van valvebox naar de verste sproeier per zone</li>'
+  + '<li>Maak T-stukken of kruisen waar leidingen splitsen (zie plan)</li>'
+  + '<li>Laat de uiteinden uitsteken op de sproeierposities &mdash; nog niet aansluiten</li>'
+  + '<li><b>Laat alle sleuven open</b></li>'
+  + '</ul>'
+  + '<h2>3.9 PE leidingen verbinden &mdash; techniek</h2>'
+  + '<p>PE leidingen worden verbonden via <b>klemkoppelingen</b> (push-fit). Geen lijm, geen solderen.</p>'
+  + '<ol>'
+  + '<li>Snij de leiding <b>recht</b> af met een leidingsnijder &mdash; een schuine of onregelmatige snede lekt</li>'
+  + '<li>Ontbramd de buitenkant licht met een mes</li>'
+  + '<li>Duw de leiding stevig in de klemkoppeling tot de markering of tot je een klik voelt</li>'
+  + '<li>Trek licht terug &mdash; bij een goede vergrendeling beweegt de leiding niet meer</li>'
+  + '<li>Test altijd met waterdruk voor je de sleuf dichtgooit</li>'
+  + '</ol>'
+  + '<p><b>Draadverbindingen</b> (bv. magneetklep, filter): wikkel 3&ndash;4 lagen teflon tape met de klok mee rond de draad. Draai hand vast en daarna een halve slag extra met een sleutel &mdash; niet te hard bij kunststof draad.</p>'
+  + '<h2>3.10 Sproeierposities voorbereiden</h2>'
+  + '<ol>'
+  + '<li>Markeer de positie van elke sproeier op het maaiveld met meetlint en plan</li>'
+  + '<li>Tap een zadel (KwikTap) op de leiding op de exacte sproeierposities</li>'
+  + '<li>Installeer de aansluitslang (12.5mm PE, ca. 1 m) tussen zadel en sproeierbehuizing &mdash; de flexibele slang geeft speelruimte bij het afstellen</li>'
+  + '<li>Breng de sproeierbehuizing in de grond: bovenkant <b>gelijk met het maaiveld</b> &mdash; niet hoger (gazonmaaier) en niet te laag (sproeit niet ver genoeg omhoog)</li>'
+  + '<li><b>Sproeierkop er nog niet opschroeven</b> &mdash; eerst leidingen doorspoelen (&sect;4.1)</li>'
+  + '</ol>'
+  + '<h2>3.11 Micro-sproeiers installeren (indien van toepassing)</h2>'
+  + '<p>Micro-sproeiers worden gebruikt voor borders, plantenbakken of zones waar geen druppeldarm past.</p>'
+  + '<ul>'
+  + '<li>Installeer op een paal of steker op de aangegeven positie (zie plan)</li>'
+  + '<li>Sluit aan op de 12.5mm of 4mm voedingsleiding</li>'
+  + '<li>Hoogte afstellen zodat de sproeistraal de planten bereikt zonder overmatige verdamping door wind</li>'
+  + '</ul>'
+  + '<h2>3.12 Druppeldarm leggen</h2>'
+  + '<ol>'
+  + '<li>Leg de druppeldarm in rijen met de rijafstand zoals op het plan (typisch 30 cm)</li>'
+  + '<li>Begin met een contourrij langs de rand van het plantvak</li>'
+  + '<li>Sluit aan op de zijleiding via een T-stuk en 16mm verbinder</li>'
+  + '<li>Maximale lengte per rij: <b>&plusmn;50 m</b> &mdash; bij langere trajecten treden druk- en debietverlies op</li>'
+  + '<li>Zet de rijen vast met grondankers om wegspoelen te voorkomen</li>'
+  + '<li>Sluit elk uiteinde af met een eindstop</li>'
+  + '<li>Installeer een <b>ontluchtingsventiel</b> op het hoogste punt van elke sectie &mdash; dit laat lucht ontsnappen bij het vullen en voorkomt vacuüm bij het leeglopen</li>'
+  + '<li>Gebruik <b>blinde darm</b> (zonder druppels) voor overbruggingen over paden of naar een volgend plantvak</li>'
+  + '<li>Dek af met minimaal 5 cm boomschors of mulch voor optimale werking en vorstbescherming</li>'
+  + '</ol>'
+  + '<h2>3.13 Bodemvochtigheidssensor installeren (indien van toepassing)</h2>'
+  + '<p>De bodemvochtigheidssensor zorgt ervoor dat het systeem niet beregenigt als de grond al voldoende nat is.</p>'
+  + '<ul>'
+  + '<li>Installeer op een representatief deel van de tuin &mdash; niet direct naast een sproeier of in een laagte waar water blijft staan</li>'
+  + '<li>Steek de sensor in de grond op de juiste diepte: 10&ndash;15 cm voor gazon, 20&ndash;30 cm voor beplanting &mdash; zie handleiding sensor voor het specifieke model</li>'
+  + '<li>Trek de kabel naar de controller in dezelfde sleuf als de beregeningskabel, bij voorkeur in een wachtbuis</li>'
+  + '<li>Laat de sensor 24 uur acclimatiseren in de grond voor de eerste ingebruikstelling</li>'
+  + '</ul>'
+  + '<h2>3.14 Beregeningskabel trekken</h2>'
+  + '<ul>'
+  + '<li>Kabel van controller naar valvebox &mdash; bij voorkeur in een wachtbuis, minimaal 40 cm diep</li>'
+  + '<li>Aantal aders = aantal zones + 1 gemeenschappelijke COM-ader voor alle kleppen samen</li>'
+  + '<li>Verbind aders met <b>gel-gevulde draadverbinders</b> &mdash; waterbestendig voor ondergronds gebruik</li>'
+  + '<li><b>Noteer welke ader bij welke zone hoort</b> &mdash; schrijf dit ook op de binnenkant van het valvebox-deksel</li>'
+  + '</ul>'
+  + '<h2>3.15 Bronkraan met paaltje installeren (indien van toepassing)</h2>'
+  + '<ul>'
+  + '<li>Sluit aan op de hoofdleiding via een T-stuk op de aangegeven positie (zie plan)</li>'
+  + '<li>Graaf het paaltje in tot stabiele diepte &mdash; gebruik een waterpas</li>'
+  + '<li>Als er een BRONKRAAN-magneetklep op het plan staat: sluit die aan op de valvebox voor automatische of afstandsbediening</li>'
+  + '</ul>'
+  + '<h2>3.16 Controller monteren en aansluiten</h2>'
+  + '<ol>'
+  + '<li>Monteer de controller op de aangegeven positie (zie plan) &mdash; droge, beschermde locatie</li>'
+  + '<li>Sluit de beregeningskabel aan: elke zone op de overeenkomstige klem, COM op de gemeenschappelijke klem</li>'
+  + '<li>Sluit de regenmelder aan indien aanwezig</li>'
+  + '<li>Sluit de bodemvochtigheidssensor aan indien aanwezig</li>'
+  + '<li>Sluit de wifi-module aan indien aanwezig (zie &sect;3.17)</li>'
+  + '<li>Sluit het pompstartrelais aan indien aanwezig (zie handleiding controller)</li>'
+  + '<li>Sluit 230V netstroom aan op een geaard stopcontact</li>'
+  + '</ol>'
+  + '<h2>3.17 Wifi-module en app instellen (indien van toepassing)</h2>'
+  + '<h3>Rain Bird LNK2 module (voor ESP-RZXe / ESP-ME):</h3>'
+  + '<ol>'
+  + '<li>Steek de LNK2 module in de accessoirepoort aan de binnenzijde van de controller &mdash; plug &amp; play, geen gereedschap nodig</li>'
+  + '<li>Download de <b>Rain Bird app</b> (gratis, Android of iOS)</li>'
+  + '<li>Open de app &rarr; tik op "Controller toevoegen" &rarr; kies "LNK2 / WiFi"</li>'
+  + '<li>Koppel eerst via Bluetooth als je in de buurt bent &mdash; of rechtstreeks via WiFi</li>'
+  + '<li><b>Let op: de LNK2 werkt alleen op 2,4 GHz netwerken</b> &mdash; niet op 5 GHz</li>'
+  + '<li>Na koppeling kan je de controller wereldwijd bedienen via de app</li>'
+  + '<li>Optioneel: activeer "Weerstation koppelen" in de app voor automatische aanpassing aan weersverwachtingen &mdash; bespaart tot 30% water</li>'
+  + '</ol>'
+  + '<h3>Hunter Hydrawise (voor HC / Pro-HC &mdash; wifi al ingebouwd):</h3>'
+  + '<ol>'
+  + '<li>Zet de controller aan &mdash; het display toont het wifi-setup scherm</li>'
+  + '<li>Selecteer je thuisnetwerk op het display en voer het wachtwoord in</li>'
+  + '<li>Maak een gratis account aan op <b>hydrawise.com</b></li>'
+  + '<li>Download de <b>Hydrawise app</b> (gratis, Android of iOS)</li>'
+  + '<li>Log in op je account &rarr; "Controller toevoegen" &rarr; voer het serienummer in (achteraan de controller)</li>'
+  + '<li>Activeer <b>Predictive Watering</b> voor automatische aanpassing aan het weer</li>'
+  + '</ol>'
+  + '<h3>Hunter X2 met WAND module:</h3>'
+  + '<ul><li>Steek de WAND module in de voorziene poort &rarr; volg daarna dezelfde Hydrawise app procedure als hierboven</li></ul>'
+  + '<div class="warn">\u26A0 Controleer het wifi-signaal op de locatie van de controller v&oacute;&oacute;r de installatie &mdash; een slecht signaal geeft een onbetrouwbare verbinding. Gebruik een wifi-versterker (repeater) als het signaal zwak is. Bij problemen: herstart de module door hem kort uit de poort te halen en terug in te steken.</div>'
+  + '</div>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Hoofdstuk 6 — Winterklaar maken en opstart voorjaar</h1>
-<h2>6.1 Winterklaar maken</h2>
-<ol>
-<li>Controller op "Uit" of regensensor-bypass</li>
-<li>Handmatige hoofdkraan afsluiten</li>
-<li>Pomp uitschakelen indien aanwezig</li>
-<li>Magneetkleppen manueel openen — restwater laten uitlopen</li>
-<li>Ontluchtingsventielen druppeldarm <b>open</b> laten staan</li>
-<li>Valvebox op een kier voor verdamping</li>
-</ol>
-<div class="info-box">Professioneel uitblazen met perslucht: BuitenGewoon Water +32 468 32 85 71</div>
-<h2>6.2 Opstart voorjaar</h2>
-<ol>
-<li>Ontluchtingsventielen druppeldarm sluiten</li>
-<li>Waterpeil put controleren indien pomp aanwezig</li>
-<li>Hoofdkraan <b>langzaam</b> openen</li>
-<li>Alle koppelingen en valvebox controleren op lekken</li>
-<li>Elke zone manueel activeren en nalopen</li>
-<li>Sproeiers controleren op positie — vorst kan ze verschuiven</li>
-<li>Seizoensprogramma instellen op controller/app</li>
-<li>Regenmelder en sensor controleren</li>
-<li>Filter reinigen indien nodig</li>
-</ol>
-</div>
+  // ── H4 INGEBRUIKSTELLING ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Hoofdstuk 4 &mdash; Ingebruikstelling</h1>'
+  + '<h2>4.1 Leidingen doorspoelen &mdash; VERPLICHTE EERSTE STAP</h2>'
+  + '<div class="warn"><b>\u26A0 Spoel de leidingen door V&Oacute;&Oacute;R je sproeierkoppen plaatst.</b> Bij de aanleg komen zand, aarde en zaagsel in de leidingen. Als je dit niet verwijdert voor de ingebruikstelling, verstoppen de sproeiers en magneetkleppen.</div>'
+  + '<ol>'
+  + '<li>Open de zijleiding van elke zone aan het verste uiteinde &mdash; sproeierkop is nog niet gemonteerd</li>'
+  + '<li>Activeer de zone via de handmatige override op de magneetklep (kleine knop of hendel op de klep &mdash; draaien tot water doorstroomt)</li>'
+  + '<li>Laat water 30&ndash;60 seconden doorstromen tot het water helder uitkomt</li>'
+  + '<li>Doe dit voor elke zone afzonderlijk</li>'
+  + '<li>Pas daarna de sproeierkoppen plaatsen</li>'
+  + '</ol>'
+  + '<h2>4.2 Eerste watertest op lekken</h2>'
+  + '<ul>'
+  + '<li>Open de hoofdkraan <b>langzaam</b> &mdash; te snel openen veroorzaakt waterslag</li>'
+  + '<li>Loop alle leidingen na: koppelingen, valvebox, pomp, filter, drukregelaar</li>'
+  + '<li>Herstel alle lekken voor je verdergaat &mdash; sleuven blijven open</li>'
+  + '</ul>'
+  + '<h2>4.3 Popup sproeiers afstellen</h2>'
+  + '<h3>Sproeierkop plaatsen (na doorspoelen):</h3>'
+  + '<ul><li>Schroef de sproeierkop op de behuizing &mdash; het ingebouwde filterzeefje laten zitten</li></ul>'
+  + '<h3>Startpositie (rechtse begrenzing) instellen:</h3>'
+  + '<ul>'
+  + '<li>De kop sproeit altijd vanuit een vaste startpositie</li>'
+  + '<li>Draai de behuizing in de grond om de startrichting in te stellen &mdash; zet die richting de eerste rand die de sproeier moet bereiken</li>'
+  + '</ul>'
+  + '<h3>Arc (sproeihoek) instellen:</h3>'
+  + '<ul>'
+  + '<li>Activeer de zone zodat de kop omhoogkomt</li>'
+  + '<li>Draai de instelring bovenop de kop: <b>linksom = grotere arc, rechtsom = kleinere arc</b></li>'
+  + '<li>Standaard is 180° (halve cirkel) &mdash; pas aan naar de gewenste hoek</li>'
+  + '</ul>'
+  + '<h3>Straal instellen:</h3>'
+  + '<ul>'
+  + '<li>Gebruik de Rain Bird-schroevendraaier in de gleuf bovenop het sproeimondje</li>'
+  + '<li><b>Rechtsom = kleiner bereik, linksom = groter bereik</b></li>'
+  + '<li>Stel in zodat aangrenzende sproeiers elkaar overlappen (ca. 30%)</li>'
+  + '</ul>'
+  + '<h3>Verstopte sproeierkop reinigen:</h3>'
+  + '<ol>'
+  + '<li>Schroef de kop van de behuizing (linksom)</li>'
+  + '<li>Verwijder het sproeimondje (nozzle) &mdash; linksom draaien</li>'
+  + '<li>Spoel onder de kraan schoon en gebruik een tandenstoker voor kleine gaatjes</li>'
+  + '<li>Reinig ook het filterzeefje onderaan de kop</li>'
+  + '<li>Zet alles terug en test</li>'
+  + '</ol>'
+  + '<h2>4.4 Rotoren (turbinesproeiers) afstellen</h2>'
+  + '<h3>Rotor omhoogtrekken:</h3>'
+  + '<ul>'
+  + '<li>Steek de Rain Bird-schroevendraaier in het "Pull-up" slotje bovenop de rotor</li>'
+  + '<li>Draai 90° &mdash; de rotor klikt vast in de omhooggetrokken positie, ook zonder waterdruk</li>'
+  + '</ul>'
+  + '<h3>Startpositie (rechtse begrenzing) instellen:</h3>'
+  + '<ul>'
+  + '<li>Draai de behuizing in de grond tot de rotor in de gewenste startrichting staat</li>'
+  + '<li>De rotor draait altijd van rechts naar links en terug &mdash; de startpositie is de rechtse begrenzing</li>'
+  + '</ul>'
+  + '<h3>Arc instellen:</h3>'
+  + '<ul>'
+  + '<li>Zoek de instelring bovenop de rotor (apart van de schroevendraaiergleuf)</li>'
+  + '<li><b>Met de klok mee = kleinere arc, tegen de klok in = grotere arc</b></li>'
+  + '<li>Minimum 40°, maximum 360° (volledige cirkel)</li>'
+  + '</ul>'
+  + '<h3>Straal instellen:</h3>'
+  + '<ul>'
+  + '<li>Gleuf bovenop met de Rain Bird-schroevendraaier</li>'
+  + '<li><b>Rechtsom = kleiner bereik, linksom = groter bereik</b> &mdash; stel in op 30% overlap met aangrenzende sproeiers</li>'
+  + '</ul>'
+  + '<h3>Rotor loslaten:</h3>'
+  + '<ul><li>Draai de schroevendraaier terug &mdash; de rotor trekt zichzelf in zodra de waterdruk wegvalt</li></ul>'
+  + '<h3>Verstopte rotor reinigen:</h3>'
+  + '<ol>'
+  + '<li>Schroef de kop van de behuizing (linksom)</li>'
+  + '<li>Spoel de binnenkant uit met water en reinig het filterzeefje onderaan</li>'
+  + '<li>Bij hardnekkig vuil: week de kop 30 minuten in schoon water</li>'
+  + '</ol>'
+  + '<h2>4.5 Micro-sproeiers controleren (indien van toepassing)</h2>'
+  + '<ul>'
+  + '<li>Activeer de zone en controleer of alle micro-sproeiers correct sproeien</li>'
+  + '<li>Controleer de hoek en het bereik &mdash; pas aan indien nodig</li>'
+  + '<li>Verstopt: schroef het mondstukje eraf en spoel schoon</li>'
+  + '</ul>'
+  + '<h2>4.6 Druppeldarm controleren</h2>'
+  + '<ul>'
+  + '<li>Activeer de zone en loop de druppeldarm volledig na</li>'
+  + '<li>Controleer op gelijkmatige bevochtiging langs de hele rij</li>'
+  + '<li>Ontluchtingsventielen: even open bij vullen, sluiten bij bedrijfsdruk</li>'
+  + '<li>Eindstops controleren op lekken</li>'
+  + '</ul>'
+  + '<h2>4.7 Controller programmeren</h2>'
+  + '<h3>Basis instellen:</h3>'
+  + '<ul>'
+  + '<li>Datum en tijd instellen</li>'
+  + '<li>Elke zone een naam geven (bv. "Gazon voor", "Beplanting links")</li>'
+  + '<li>Starttijd: vroeg in de ochtend (05:00&ndash;07:00) &mdash; minder verdamping en bladeren drogen overdag</li>'
+  + '</ul>'
+  + '<h3>Looptijden per zone (richtwaarden):</h3>'
+  + '<table><thead><tr><th>Zonetype</th><th>Aanbevolen looptijd</th></tr></thead><tbody>'
+  + '<tr><td>Gazon &mdash; popup sproeiers</td><td>15&ndash;20 minuten</td></tr>'
+  + '<tr><td>Gazon &mdash; rotoren</td><td>20&ndash;30 minuten</td></tr>'
+  + '<tr><td>Druppeldarm beplanting</td><td>30&ndash;45 minuten</td></tr>'
+  + '<tr><td>Micro-sproeiers borders</td><td>20&ndash;30 minuten</td></tr>'
+  + '</tbody></table>'
+  + '<h3>Frequentie:</h3>'
+  + '<ul>'
+  + '<li>Zomer: dagelijks</li>'
+  + '<li>Voor- en najaar: om de 2 dagen</li>'
+  + '</ul>'
+  + '<h3>Cycle &amp; Soak (aanbevolen bij hellingen of zware grond):</h3>'
+  + '<p>Verdeel de beregeningsduur in meerdere korte cycli met pauze ertussen om afstroming te voorkomen. Voorbeeld: 3&times; 7 minuten met 20 minuten pauze in plaats van 1&times; 20 minuten.</p>'
+  + '<h3>Regenmelder / bodemvochtigheidssensor activeren:</h3>'
+  + '<p>Activeer de sensor-ingang op de controller &mdash; het systeem slaat automatisch een beregeningsbeurt over als de sensor aangeeft dat de grond al voldoende nat is of als het regent.</p>'
+  + '<h3>Via de app (indien wifi-module aanwezig):</h3>'
+  + '<p>Alle instellingen zijn ook via de app te doen. Via de app kan je ook meldingen instellen voor storingen, vorstgevaar of verbindingsproblemen.</p>'
+  + '<h2>4.8 Veiligheidsmeter controleren (indien van toepassing)</h2>'
+  + '<p>De veiligheidsmeter bewaakt het systeem en schakelt de pomp uit bij afwijkingen (bv. drukval bij lekkage). Controleer de werking via de handleiding van het specifieke apparaat.</p>'
+  + '<h2>4.9 Dekkingscontrole</h2>'
+  + '<ul>'
+  + '<li>Loop elke zone volledig af terwijl hij actief is</li>'
+  + '<li>Controleer op droge plekken (onvoldoende overlap) en overmatig natte zones (te veel overlap)</li>'
+  + '<li>Pas straal en arc aan waar nodig</li>'
+  + '</ul>'
+  + '<h2>4.10 Sleuven dichtmaken</h2>'
+  + '<div class="warn">\u26A0 Sluit de sleuven pas als alles getest is en er geen lekken zijn.</div>'
+  + '<ol>'
+  + '<li>Leg eerst 10 cm zand rondom de leidingen</li>'
+  + '<li>Vul daarna met aarde, stapsgewijs aanstampen</li>'
+  + '<li>Herstel de bestrating of begroeiing</li>'
+  + '</ol>'
+  + '</div>'
 
-<div class="sectie">
-<div class="header"><div>${logo}</div><div style="color:#6b7280;font-size:9pt">Installatiegids — ${data.naam}</div></div>
-<h1>Bijlage — Materiaallijst</h1>
-<div class="info-box">Vink hieronder af tijdens de installatie.</div>
-${data.materialen && data.materialen.length > 0 ?
-  '<table><tr><th>✓</th><th>Artikel</th><th>Aantal</th><th>Eenheid</th></tr>' +
-  data.materialen.map(function(m){return '<tr><td>☐</td><td>'+m.naam+'</td><td>'+m.aantal+'</td><td>'+m.eenheid+'</td></tr>';}).join('') +
-  '</table>'
-  : '<p>Zie de bijlage bij de offerte voor de volledige materiaallijst.</p>'
+  // ── H5 PROJECTSPECIFIEK ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Hoofdstuk 5 &mdash; Projectspecifiek gedeelte</h1>'
+  + '<div class="info">Dit hoofdstuk is specifiek gegenereerd voor jouw project op basis van het beregeningsplan van BuitenGewoon Water.</div>'
+  + '<h2>5.1 Overzicht installatie</h2>'
+  + '<table><thead><tr><th>Element</th><th>Details</th></tr></thead><tbody>'+elem_rows+'</tbody></table>'
+  + '<h2>5.2 Hoofdleiding</h2>'
+  + '<table><thead><tr><th>Van</th><th>Naar</th><th>Diameter</th><th>Lengte</th></tr></thead><tbody>'
+  + '<tr><td>Wateraansluiting</td><td>Valvebox</td><td>'+data.hoofdleiding_dia+'</td><td>'+data.hoofdleiding_lengte+' m</td></tr>'
+  + '</tbody></table>'
+  + '<h2>5.3 Installatievolgorde per zone</h2>'
+  + '<div class="info"><b>Volgorde:</b> Leg eerst alle zijleidingen van alle zones. Installeer dan druppeldarm. Plaats sproeierkoppen pas na het doorspoelen (&sect;4.1).</div>'
+  + zones_html
+  + '<h2>5.4 Koppelschema controller</h2>'
+  + schema_html
+  + '</div>'
+
+  // ── H6 WINTER ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Hoofdstuk 6 &mdash; Winterklaar maken en opstart voorjaar</h1>'
+  + '<h2>6.1 Winterklaar maken</h2>'
+  + '<p>Doe dit voor de eerste nachtvorst &mdash; water dat in leidingen achterblijft kan bij vorst bevriezen en leidingen of koppelingen beschadigen.</p>'
+  + '<ol>'
+  + '<li>Zet de controller op "Uit" of activeer de regensensor-bypass</li>'
+  + '<li>Sluit de handmatige hoofdkraan af</li>'
+  + '<li>Zet de pomp uit indien aanwezig</li>'
+  + '<li>Open de magneetkleppen manueel via de kleine knop of hendel op de klep &mdash; laat restwater uitlopen via de sproeiers</li>'
+  + '<li>Laat de ontluchtingsventielen op de druppeldarm <b>open</b> staan voor de winter &mdash; zo kan restwater ontsnappen</li>'
+  + '<li>Zet de valvebox op een kier voor verdamping van restwater</li>'
+  + '<li>Ontkoppel de wifi-module niet &mdash; de controller mag aangesloten blijven, enkel het water afsluiten</li>'
+  + '</ol>'
+  + '<div class="info">Voor professioneel uitblazen met perslucht: contacteer BuitenGewoon Water (+32 468 32 85 71). Dit is de meest volledige methode en garandeert dat ook de verste leidingen volledig leeg zijn.</div>'
+  + '<h2>6.2 Opstart voorjaar</h2>'
+  + '<ol>'
+  + '<li>Sluit de ontluchtingsventielen op de druppeldarm</li>'
+  + '<li>Controleer het waterpeil in de put indien een pomp aanwezig is</li>'
+  + '<li>Open de hoofdkraan <b>langzaam</b> &mdash; geleidelijk vullen vermijdt waterslag</li>'
+  + '<li>Controleer alle zichtbare koppelingen en de valvebox op lekken</li>'
+  + '<li>Activeer elke zone manueel en loop het systeem volledig na</li>'
+  + '<li>Controleer of sproeiers nog waterpas staan &mdash; grondwerken of vorst kunnen ze verschuiven</li>'
+  + '<li>Stel het seizoensprogramma in op de controller of app</li>'
+  + '<li>Controleer de regenmelder en bodemvochtigheidssensor op correcte werking</li>'
+  + '<li>Reinig de filter indien nodig</li>'
+  + '</ol>'
+  + '</div>'
+
+  // ── BIJLAGE ──
+  + '<div class="sectie">'
+  + '<div class="pghdr">'+logo+'<span class="pghdr-r">Installatiegids &mdash; '+data.naam+'</span></div>'
+  + '<h1>Bijlage &mdash; Materiaallijst</h1>'
+  + '<div class="info">Vink hieronder af tijdens de installatie. De hoeveelheden zijn gebaseerd op het beregeningsplan.</div>'
+  + mat_html
+  + '</div>'
+  + '</body></html>';
 }
-</div>
-</body></html>`;
-}
 
-// ── DHZ OFFERTE ──
-var _dhzInstellingen={handling:10,levering:false,leveringBedrag:0,planfee:0,planOmschrijving:'Opmaak beregeningsplan inclusief zones, leidingschema en materiaalselectie',geldig:30,blokken:[]};
 
 function getDhzKey(){return 'bp_dhz_'+(activeProjectId||'default');}
 function saveDhzInstellingen(){try{localStorage.setItem(getDhzKey(),JSON.stringify(_dhzInstellingen));}catch(e){}}
@@ -12922,7 +13179,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v116</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v117</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -14737,6 +14994,7 @@ async function saveBundleToFile(silent){
       await writable.close();
       _bundleLoadedCount = huidig;
       if(!silent) showToast('Projectenbundel opgeslagen (' + huidig + ' projecten) ✓','#16a34a');
+      _updateSaveCards();
     } catch(e){
       if(e.name !== 'AbortError') showToast('Bundel opslaan mislukt: ' + e.message,'#dc2626');
     }
@@ -14782,6 +15040,7 @@ async function loadBundleFromFile(){
     
     renderProjectPanel();
     showToast('Bundel geladen: ' + samengevoegd.length + ' projecten ✓','#16a34a');
+  _updateSaveCards();
   } catch(e){
     if(e.name !== 'AbortError') showToast('Bundel laden mislukt: ' + e.message,'#dc2626');
   }
@@ -14800,6 +15059,12 @@ function _updateSaveCards(){
     if(_settingsHandle){
       settingsBar.style.display = 'flex';
       settingsBtns.style.display = 'none';
+      // Toon bestandsnaam indien beschikbaar
+      var nameSpan = settingsBar.querySelector('span');
+      if(nameSpan){
+        var naam = (_settingsHandle.name || '').replace(/^.*[\\\/]/, '');
+        nameSpan.textContent = '✅ ' + (naam || 'Automatisch opgeslagen');
+      }
     } else {
       settingsBar.style.display = 'none';
       settingsBtns.style.display = 'flex';
@@ -14807,16 +15072,23 @@ function _updateSaveCards(){
   }
   // Bundle card
   var bundleBar = document.getElementById('bundle-status-bar');
-  // bundle knoppen altijd tonen maar status bar ook
-  if(bundleBar){
-    bundleBar.style.display = _bundleHandle ? 'flex' : 'none';
-    // bundel knoppen: als actief, verberg de grote knoppen
-    var bundleCard = document.getElementById('bundle-card');
-    if(bundleCard){
-      var mainBtns = bundleCard.querySelector('div > div:last-child');
-      if(mainBtns && _bundleHandle){
-        mainBtns.style.display = 'none';
+  var bundleCard = document.getElementById('bundle-card');
+  if(bundleBar && bundleCard){
+    if(_bundleHandle){
+      bundleBar.style.display = 'flex';
+      // Verberg grote knoppen
+      var mainRow = bundleCard.querySelector('.bundle-main-btns');
+      if(mainRow) mainRow.style.display = 'none';
+      // Toon bestandsnaam
+      var nameSpan = bundleBar.querySelector('span');
+      if(nameSpan){
+        var naam = (_bundleHandle.name || '').replace(/^.*[\\\/]/, '');
+        nameSpan.textContent = '✅ ' + (naam || 'Automatisch opgeslagen');
       }
+    } else {
+      bundleBar.style.display = 'none';
+      var mainRow = bundleCard.querySelector('.bundle-main-btns');
+      if(mainRow) mainRow.style.display = 'flex';
     }
   }
 }
@@ -14900,7 +15172,7 @@ function renderProjectPanel(){
             <span style="font-size:11px;font-weight:600">📦 Projectenbundel</span>
             <span style="font-size:10px;color:var(--tx2);margin-left:6px">alle projecten · .bwb</span>
           </div>
-          <div style="display:flex;gap:4px">
+          <div class="bundle-main-btns" style="display:flex;gap:4px">
             <button class="ub" onclick="saveBundleToFile(false)" title="Bundel opslaan als .bwb" style="font-size:11px;padding:3px 9px">💾 Opslaan</button>
             <button class="ub" onclick="loadBundleFromFile()" title="Bundel laden uit .bwb" style="font-size:11px;padding:3px 9px">⬆ Laden</button>
           </div>
@@ -15604,13 +15876,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v116</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v117</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v116</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v117</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -16059,6 +16331,7 @@ async function saveSettingsToFile(silent){
       await writable.write(blob);
       await writable.close();
       if(!silent)showToast('Instellingen opgeslagen ✓','#16a34a');
+      _updateSaveCards();
     } catch(e){
       if(e.name!=='AbortError')showToast('Instellingen opslaan mislukt: '+e.message,'#dc2626');
     }
@@ -16093,6 +16366,7 @@ async function importSettingsFromFile(){
         if(applySettingsData(data)){
           _settingsLoadedCount = telInstellingen(data);
           showToast('Instellingen geladen ✓','#16a34a');
+    _updateSaveCards();
           resolve(true);
         } else {
           showToast('Ongeldig instellingenbestand','#dc2626');
