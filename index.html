@@ -12232,19 +12232,38 @@ function _buildInstallatiegidsData(proj){
     kringNr++;
   });
 
-  // Materialen vanuit prijslijst
+  // Materialen vanuit getMaterialData() — zelfde bron als echte materiaallijst
   var mats = [];
   try {
-    var stored = JSON.parse(localStorage.getItem('bw_prices') || '{}');
-    var cats = JSON.parse(localStorage.getItem('bw_catalog_prices') || '{}');
-    var counter_data = counter || {};
-    Object.keys(counter_data).forEach(function(k){
-      var n = counter_data[k];
-      if(n > 0){
-        mats.push({naam: k, aantal: n+'', eenheid: 'st'});
+    var md = getMaterialData();
+    var stored = JSON.parse(localStorage.getItem('bw_catalog_prices') || '{}');
+    var prices2 = JSON.parse(localStorage.getItem('bw_prices') || '{}');
+    // Tel alle ingetekende elementen
+    Object.keys(md.counts).forEach(function(k){
+      var n = md.counts[k];
+      if(n <= 0) return;
+      var naam = md.notes[k] || k;
+      var eenheid = 'st';
+      mats.push({naam: naam, aantal: n+'', eenheid: eenheid});
+    });
+    // Leidingen per diameter
+    Object.keys(md.pipeByDia).forEach(function(k){
+      var len = md.pipeByDia[k];
+      if(!len || len <= 0) return;
+      var naam = k === 'imat' ? 'Main line imat leiding' :
+                 k.startsWith('wb') ? 'Wachtbuis ' + k.replace('wb','') + 'mm' :
+                 'PE leiding Ø' + k.replace('pipe','') + 'mm';
+      mats.push({naam: naam, aantal: Math.ceil(len/pxPerMeter)+'', eenheid: 'm'});
+    });
+    // Extra materialen uit project
+    var proj2 = getProjects ? getProjects().find(function(p){return p.id===activeProjectId;}) : null;
+    var extraMat = proj2 ? (proj2.extraMat || []) : [];
+    extraMat.forEach(function(item){
+      if(item.aantal > 0){
+        mats.push({naam: item.naam || item.id || '', aantal: item.aantal+'', eenheid: item.eenheid||'st'});
       }
     });
-  } catch(e){}
+  } catch(e){ console.error('Mat error:', e); }
   data.materialen = mats;
 
   return data;
