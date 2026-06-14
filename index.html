@@ -12861,8 +12861,10 @@ function dlTekst(dat){
   return ' ('+d+(d===1?' dag':' dagen')+')';
 }
 
+function _isTaakGepland(t){if(!t.afgevinkt&&t.herhaling&&t.herhaling!=="nooit"&&t.deadline){var d=Math.round((new Date(t.deadline)-new Date(_TODAY))/86400000);return d>14;}return false;}
+
 function updateTakenBadge(){
-  var n=getTaken().filter(function(t){return !t.afgevinkt;}).length;
+  var n=getTaken().filter(function(t){if(t.afgevinkt)return false;if(_isTaakGepland(t))return false;return true;}).length;
   var b=document.getElementById('taken-badge');
   if(b){ b.style.display=n>0?'inline-block':'none'; b.textContent=n>99?'99+':n+''; }
 }
@@ -12983,11 +12985,24 @@ function _renderTaakRij(taak){
 }
 
 function _renderSectie(container,taken,pid){
-  var open=taken.filter(function(t){return !t.afgevinkt;});
+  var open=taken.filter(function(t){return !t.afgevinkt&&!_isTaakGepland(t);});
+  var gepland=taken.filter(function(t){return !t.afgevinkt&&_isTaakGepland(t);});
   var afg=taken.filter(function(t){return t.afgevinkt;});
   open.sort(function(a,b){var p=prioOrd(a.prio)-prioOrd(b.prio);if(p)return p;if(a.deadline&&b.deadline)return a.deadline.localeCompare(b.deadline);return a.deadline?-1:b.deadline?1:0;});
-  if(open.length===0&&afg.length===0){var l=document.createElement('p');l.style.cssText='font-size:11px;color:var(--tx2);padding:10px 0';l.textContent='Geen taken';container.appendChild(l);return;}
+  if(open.length===0&&gepland.length===0&&afg.length===0){var l=document.createElement('p');l.style.cssText='font-size:11px;color:var(--tx2);padding:10px 0';l.textContent='Geen taken';container.appendChild(l);return;}
   open.forEach(function(t){container.appendChild(_renderTaakRij(t));});
+  if(gepland.length>0){
+    var gW=document.createElement('div');gW.style.marginTop='10px';
+    var gH=document.createElement('div');gH.style.cssText='display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:5px 0;border-top:1px solid var(--bor)';
+    var gT=document.createElement('span');gT.style.cssText='font-size:11px;color:#9ca3af;font-weight:600';gT.textContent='Gepland ('+gepland.length+')';
+    var gG=document.createElement('span');gG.style.cssText='font-size:10px;color:#9ca3af';gG.textContent='\u25BC';
+    gH.appendChild(gT);gH.appendChild(gG);
+    var gL=document.createElement('div');gL.style.display='block';
+    gepland.sort(function(a,b){return(a.deadline||'').localeCompare(b.deadline||'');});
+    gepland.forEach(function(t){var r=_renderTaakRij(t);r.style.opacity='0.4';r.style.filter='grayscale(50%)';gL.appendChild(r);});
+    gH.onclick=function(){gL.style.display=gL.style.display==='none'?'block':'none';gG.textContent=gL.style.display==='none'?'\u25BC':'\u25B2';};
+    gW.appendChild(gH);gW.appendChild(gL);container.appendChild(gW);
+  }
   if(afg.length>0){
     var wrap=document.createElement('div'); wrap.style.marginTop='8px';
     var hdr=document.createElement('div'); hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:5px 0;border-top:1px solid var(--bor)';
@@ -13083,6 +13098,7 @@ function _voegStandaardTakenToe(){
     {id:'std_v125_007', tekst:'Planning opstart voorjaar', projectId:null, prio:'normaal', deadline:'2027-03-01', herhaling:'jaarlijks',
      notitie:'Maak een planning voor de opstart van beregeningssystemen in het voorjaar. Denk aan: klanten contacteren, materiaal bestellen, agenda opbouwen.',
      afgevinkt:false, afgevinktOp:null, aangemaaktOp:_TODAY},
+    {id:'std_v126_001', tekst:'Catalogus: zichtbaarheid elementen instellen', projectId:null, prio:'normaal', deadline:null, herhaling:'nooit', notitie:'Open de Catalogus (knop rechtsboven). Per element kan je aanvinken of het standaard zichtbaar is in de materiaallijst. Vink elementen aan die je altijd wil zien en zet minder gebruikte elementen uit. Dit bepaalt wat automatisch verschijnt bij een nieuw plan.', afgevinkt:false, afgevinktOp:null, aangemaaktOp:_TODAY},
     {id:'std_v125_008', tekst:'Planning winteronderhoud', projectId:null, prio:'normaal', deadline:'2026-10-01', herhaling:'jaarlijks',
      notitie:'Maak een planning voor het winterklaar maken van beregeningssystemen. Denk aan: klanten contacteren voor uitblaasbeurt, materiaal en agenda.',
      afgevinkt:false, afgevinktOp:null, aangemaaktOp:_TODAY}
