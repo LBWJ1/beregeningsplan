@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v135</title>
+<title>Beregeningsplan Editor v136</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v135 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v136 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -8908,7 +8908,7 @@ function statusBadge(status){
 
 function getLOGO_URI(){var el=document.getElementById('bw-logo-data');return el?(el.src||(el.src=el.dataset.src),el.src):'';}
 
-const PAL=['#d42020','#b91c1c','#e53e3e','#0891b2','#0e7490','#1e3a8a','#7b22d4','#6d28d9','#4f46e5','#16a34a','#15803d','#4a7c59','#f97316','#d97706','#ca8a04','#374151','#6b7280','#111827','#ec4899','#db2777','#f0f0f0','#000000'];
+const PAL=['#e53e3e','#fc8181','#ed64a6','#d53f8c','#97266d','#9c4221','#ff6b00','#dd6b20','#fbd38d','#f6e05e','#b7791f','#68d391','#38a169','#285e61','#00b5d8','#76e4f7','#90cdf4','#2b6cb0','#2c5282','#d6bcfa','#6b46c1','#4a5568','#1a202c','#f7fafc','#ffffff','#000000'];
 
 function toggleLayer(layer){layerVis[layer]=!layerVis[layer];const b=document.getElementById('lay-'+layer);if(b){b.style.opacity=layerVis[layer]?'1':'0.45';b.style.fontStyle=layerVis[layer]?'':'italic';}redraw();}
 let counter={},calibMode=false,calibP1=null,pendingTextPos=null;
@@ -13747,7 +13747,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v135</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v136</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -16172,7 +16172,7 @@ function importProjectJSON(e){
 
 // ── DRIP LINES ──
 // ── DRIP PATTERN v10 ──
-const BLOCK_COLORS=['#2563eb','#16a34a','#dc2626','#d97706','#7c3aed','#0891b2','#be185d','#854d0e'];
+const BLOCK_COLORS=['#e53e3e','#2b6cb0','#38a169','#dd6b20','#6b46c1','#00b5d8','#d53f8c','#b7791f','#285e61','#97266d','#ff6b00','#90cdf4','#68d391','#f6e05e','#9c4221','#4a5568'];
 
 function polyIntersectionsY(pts,y){
   const xs=[];
@@ -16487,7 +16487,7 @@ function buildCouplingSchema(){
   let html='';
   if(!zones.length){html='<div class="empty">Wijs zonenamen toe aan sproeiers (selecteer → zijbalk) om het schema te genereren.</div>';}
   else{
-    const colors=['#e53935','#f9a825','#2e7d32','#1565c0','#e65100','#6a1b9a'];
+    const colors=['#e53e3e','#2b6cb0','#38a169','#dd6b20','#6b46c1','#00b5d8','#d53f8c','#b7791f','#285e61','#97266d','#ff6b00','#90cdf4','#68d391','#f6e05e','#9c4221','#4a5568','#fc8181','#d6bcfa','#76e4f7','#ed64a6'];
     const colorNames=['Rood','Geel','Groen','Blauw','Oranje','Paars'];
     html+='<table><thead><tr><th>Zone</th><th>Sproeiers</th><th>Klepnr.</th><th>Debiet (l/min)</th><th>Draadkleur</th></tr></thead><tbody>';
     zones.forEach((z,i)=>{
@@ -16656,13 +16656,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v135</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v136</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v135</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v136</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
