@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v137</title>
+<title>Beregeningsplan Editor v138</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v137 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v138 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -309,6 +309,9 @@ button.ub.pri:hover{background:#1250a0}
   <div class="sbh">Installatie</div>
   <div class="si" onclick="selType('boring')" id="type-boring">
     <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="#92400e" stroke-width="1.5"/><line x1="10" y1="2" x2="10" y2="18" stroke="#92400e" stroke-width="1.5"/><line x1="2" y1="10" x2="18" y2="10" stroke="#92400e" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#92400e"/></svg>Diepteboring
+  </div>
+  <div class="si" onclick="selType('boring-opp')" id="type-boring-opp">
+    <svg viewBox="0 0 20 20"><rect x="2" y="8" width="16" height="4" rx="1" fill="none" stroke="#b45309" stroke-width="1.5"/><line x1="10" y1="2" x2="10" y2="8" stroke="#b45309" stroke-width="1.5"/><line x1="10" y1="12" x2="10" y2="18" stroke="#b45309" stroke-width="1.5"/><line x1="5" y1="5" x2="15" y2="5" stroke="#b45309" stroke-width="1" stroke-dasharray="2,2"/></svg>Oppervl.boring
   </div>
   <div class="si" onclick="selType('pump')" id="type-pump">
     <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="#c04000" stroke-width="1.5"/><path d="M6 10 Q10 5 14 10 Q10 15 6 10Z" fill="#c04000"/></svg>Bronpomp
@@ -855,6 +858,8 @@ const CATALOG=[
 {id:'DRIP-M',cat:'Druppeldarm',omschrijving:'Druppeldarm per meter',eenh:'m',marge:20,btw:21,visible:true},
 {id:'BLIND-M',cat:'Druppeldarm',omschrijving:'Blinde darm per meter',eenh:'m',marge:20,btw:21,visible:true},
 {id:'RB-IMAT',cat:'Druppeldarm',omschrijving:'Rain Bird imat druppelmat (60m² per rol)',eenh:'rol',marge:20,btw:21,visible:true},
+{id:'H-ECOMAT-72',cat:'Druppeldarm',omschrijving:'Hunter Eco-Mat 17mm (72m² per rol)',eenh:'rol',marge:20,btw:21,visible:true},
+{id:'H-ECOMAT-80',cat:'Druppeldarm',omschrijving:'Hunter Eco-Mat 16mm (80m² per rol)',eenh:'rol',marge:20,btw:21,visible:true},
 {id:'B.52.010',cat:'Druppeldarm',omschrijving:'RB XFF hoofdslang ¾\" 30m (imat main line)',eenh:'rol',marge:20,btw:21,visible:true,bruto:349.11,korting:50},
 {id:'PE-16M',cat:'Leidingen',omschrijving:'PE slang 16mm per m',eenh:'m',marge:20,btw:21,visible:true},
 {id:'PE-25M',cat:'Leidingen',omschrijving:'PE slang 25mm per m',eenh:'m',marge:20,btw:21,visible:true},
@@ -974,6 +979,7 @@ const CATALOG=[
 {id:'2.04.4SR6',cat:'Pompen',omschrijving:'Pedrollo 4SR6/13s bronpomp',eenh:'st',marge:20,btw:21,visible:true},
 {id:'BORING-M',cat:'Diepteboring',omschrijving:'Diepteboring per meter',eenh:'m',marge:0,btw:21,visible:true},
 {id:'STAKKABOX',cat:'Diepteboring',omschrijving:'Stakkabox afwerking pompput (bodemplaat + HDPE deksel staalframe)',eenh:'st',marge:20,btw:21,visible:true},
+{id:'BORING-OPP',cat:'Oppervlakteboring',omschrijving:'Oppervlakteboring per meter',eenh:'m',marge:0,btw:21,visible:true},
 {id:'BRONKRAAN',cat:'Diversen',omschrijving:'Bronkraan met hardhouten paaltje en leidingwerk',eenh:'st',marge:20,btw:21,visible:true,inkoop:190},
 {id:'GRASZODEN',cat:'Diversen',omschrijving:'Nieuwe graszoden',eenh:'m2',marge:20,btw:21,visible:true},
 {id:'DEVOLO-WIFI',cat:'Controllers',omschrijving:'Devolo Wifi verbindingsmodule',eenh:'st',marge:20,btw:21,visible:true},
@@ -8958,6 +8964,7 @@ const EDEFS={
   rainsensor:{color:'#0284c7',name:'Regenmelder',       label:'RS',cat:'inf',unit:'st',sz:14},
   iron:      {color:'#78716c',   name:'Ontijzering',       label:'OT',cat:'inf',unit:'st',sz:16},
   boring:    {color:'#92400e',   name:'Diepteboring',      label:'DB',cat:'inf',unit:'st',sz:18},
+  'boring-opp':{color:'#b45309',name:'Oppervlakteboring', label:'OB',cat:'inf',unit:'st',sz:18},
   soilsensor:{color:'#15803d',   name:'Bodemvochtigheidssensor', label:'BV',cat:'inf',unit:'st',sz:14},
   wifimod:   {color:'#7c3aed',   name:'Wifi module',       label:'WF',cat:'inf',unit:'st',sz:14},
   tappost:   {color:'#0369a1',   name:'Bronkraan met paaltje', label:'BK',cat:'inf',unit:'st',sz:14},
@@ -9868,6 +9875,7 @@ function drawSprinkler(el,hi){
     case 'rainsensor':ctx.beginPath();ctx.arc(el.x,el.y,sz,Math.PI,0);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();[-4,0,4].forEach(dx=>{ctx.beginPath();ctx.moveTo(el.x+dx,el.y);ctx.lineTo(el.x+dx,el.y+7);ctx.strokeStyle=c;ctx.lineWidth=1.8;ctx.stroke();});break;
     case 'iron':ctx.beginPath();ctx.rect(el.x-sz,el.y-sz*.6,sz*2,sz*1.2);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();[-sz*.4,0,sz*.4].forEach(dx=>{ctx.beginPath();ctx.moveTo(el.x+dx,el.y-sz*.6);ctx.lineTo(el.x+dx,el.y+sz*.6);ctx.strokeStyle=c;ctx.lineWidth=1;ctx.stroke();});break;
     case 'boring':ctx.beginPath();ctx.arc(el.x,el.y,sz,0,Math.PI*2);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.moveTo(el.x,el.y-sz);ctx.lineTo(el.x,el.y+sz);ctx.moveTo(el.x-sz,el.y);ctx.lineTo(el.x+sz,el.y);ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.arc(el.x,el.y,sz*.35,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();break;
+    case 'boring-opp':ctx.beginPath();ctx.rect(el.x-sz,el.y-sz*.35,sz*2,sz*.7);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.moveTo(el.x,el.y-sz);ctx.lineTo(el.x,el.y-sz*.35);ctx.moveTo(el.x,el.y+sz*.35);ctx.lineTo(el.x,el.y+sz);ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([3,2]);ctx.beginPath();ctx.moveTo(el.x-sz*.6,el.y-sz*.7);ctx.lineTo(el.x+sz*.6,el.y-sz*.7);ctx.strokeStyle=c;ctx.lineWidth=1;ctx.stroke();ctx.setLineDash([]);break;
     case 'soilsensor':ctx.beginPath();ctx.arc(el.x,el.y,sz,0,Math.PI*2);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.moveTo(el.x,el.y+sz*.3);ctx.lineTo(el.x,el.y+sz*1.2);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.moveTo(el.x-sz*.5,el.y-sz*.3);ctx.quadraticCurveTo(el.x,el.y-sz*.8,el.x+sz*.5,el.y-sz*.3);ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.stroke();break;
     case 'wifimod':ctx.beginPath();ctx.rect(el.x-sz,el.y-sz*.7,sz*2,sz*1.4);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();[.9,.6,.35].forEach(function(r,i){ctx.beginPath();ctx.arc(el.x,el.y+sz*.2,sz*r,Math.PI*1.15,Math.PI*1.85);ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.stroke();});ctx.beginPath();ctx.arc(el.x,el.y+sz*.2,sz*.12,0,Math.PI*2);ctx.fillStyle=c;ctx.fill();break;
     case 'tappost':ctx.beginPath();ctx.moveTo(el.x,el.y+sz);ctx.lineTo(el.x,el.y-sz*.5);ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.stroke();ctx.beginPath();ctx.moveTo(el.x,el.y-sz*.5);ctx.lineTo(el.x+sz*.8,el.y-sz*.5);ctx.lineTo(el.x+sz*.8,el.y-sz*.1);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.arc(el.x+sz*.8,el.y-sz*.1,sz*.25,0,Math.PI*2);ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.stroke();break;
@@ -10555,6 +10563,13 @@ function updateSelPanel(){
       <input type="checkbox" ${z.showDrip?'checked':''} onchange="plantZones[${selEl._idx}].showDrip=this.checked;redraw()">
       Druppelrijen tonen op plan
     </label>
+    ${z.zoneType==='imat'?`<label style="margin-top:6px;display:block;font-size:11px;font-weight:600">Imat type:</label>
+    <select style="width:100%;padding:4px;border:1px solid var(--bor2);border-radius:var(--r);font-size:11px;background:var(--sur);color:var(--tx);margin-bottom:4px"
+      onchange="plantZones[${selEl._idx}].imatType=this.value;saveProject();">
+      <option value="RB-IMAT" ${(z.imatType||'RB-IMAT')==='RB-IMAT'?'selected':''}>Rain Bird imat (60m² per rol)</option>
+      <option value="H-ECOMAT-72" ${z.imatType==='H-ECOMAT-72'?'selected':''}>Hunter Eco-Mat 17mm (72m² per rol)</option>
+      <option value="H-ECOMAT-80" ${z.imatType==='H-ECOMAT-80'?'selected':''}>Hunter Eco-Mat 16mm (80m² per rol)</option>
+    </select>`:''}
     <label style="margin-top:6px;display:block">Kleur zone:</label>
     <div id="zone-color-picker-wrap" style="margin-bottom:6px"></div>
     <button class="ub" style="margin-top:8px;width:100%;justify-content:center;background:var(--bl2);color:var(--bl);border-color:var(--bl)" onclick="openSubzoneWizard(${selEl._idx})">✂ Verdeel in subzones</button>
@@ -10615,13 +10630,17 @@ function updateSelPanel(){
   <label>Richting (°):</label><input type="number" min="0" max="359" step="5" value="${selEl.dir||0}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.dir=parseFloat(this.value);redraw()">`:
   selEl.type==='meter'?`<label>Breedte (cm):</label><input type="number" value="${selEl.dimW||0}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.dimW=parseFloat(this.value);redraw()">
   <label>Hoogte (cm):</label><input type="number" value="${selEl.dimH||0}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.dimH=parseFloat(this.value);redraw()">`:``}
-  ${(['valvebox','pump','controller','filter','drukregelaar','ontijzering','regenmelder','boring','soilsensor','wifimod','tappost'].includes(selEl.type))?`
+  ${(['valvebox','pump','controller','filter','drukregelaar','ontijzering','regenmelder','boring','boring-opp','soilsensor','wifimod','tappost'].includes(selEl.type))?`
   <label style="margin-top:6px;display:block;font-size:11px;font-weight:600">Type uit catalogus:</label>
   <div id="cat-type-sel-wrap" style="margin-bottom:6px"></div>
   ${selEl.type==='boring'?`<label style="margin-top:4px;display:block;font-size:11px;font-weight:600">Diepte (meter):</label>
   <input type="number" min="1" max="300" step="1" value="${selEl.depth||''}" placeholder="bv. 78"
     style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--bor2);border-radius:5px;background:var(--sur);color:var(--tx)"
     oninput="selEl.depth=parseFloat(this.value)||null;const eb=elements.find(e=>e.id===selEl.id);if(eb)eb.depth=selEl.depth;saveProject();">`:``}
+  ${selEl.type==='boring-opp'?`<label style="margin-top:4px;display:block;font-size:11px;font-weight:600">Lengte (meter):</label>
+  <input type="number" min="1" max="1000" step="1" value="${selEl.length||''}" placeholder="bv. 25"
+    style="width:100%;font-size:11px;padding:3px 6px;border:1px solid var(--bor2);border-radius:5px;background:var(--sur);color:var(--tx)"
+    oninput="selEl.length=parseFloat(this.value)||null;const eo=elements.find(e=>e.id===selEl.id);if(eo)eo.length=selEl.length;saveProject();">`:``}
   <label style="margin-top:2px;display:block">Grootte: <b>${selEl.dimW||8}</b></label>
   <input type="range" min="6" max="50" value="${selEl.dimW||8}" step="1" style="width:100%"
     oninput="const sv=parseInt(this.value);selEl.dimW=sv;const esv=elements.find(e=>e.id===selEl.id);if(esv)esv.dimW=sv;this.previousElementSibling.lastChild.textContent=sv;redraw()">
@@ -10634,7 +10653,7 @@ function updateSelPanel(){
   if(ctsWrap&&selEl){
     const catMap={valvebox:['Magneetkleppen'],pump:['Pompen'],controller:['Controllers'],
       filter:['Pompen'],drukregelaar:['Pompen'],ontijzering:['Ontijzering'],regenmelder:['Controllers'],
-      boring:['Diepteboring'],soilsensor:['Controllers'],wifimod:['Controllers'],tappost:['Diversen']};
+      boring:['Diepteboring'],'boring-opp':['Oppervlakteboring'],soilsensor:['Controllers'],wifimod:['Controllers'],tappost:['Diversen']};
     const allowed=catMap[selEl.type]||[];
     if(allowed.length){
       const items=CATALOG.filter(function(c){return allowed.indexOf(c.cat)>=0;});
@@ -11696,15 +11715,19 @@ function buildIngetekendSection(){
   const imatZones=zones.filter(function(z){return z.zoneType==='imat';});
   if(imatZones.length){
     let totImat=0;
+    const imatRolM2={'RB-IMAT':60,'H-ECOMAT-72':72,'H-ECOMAT-80':80};
+    const imatTypeLabel={'RB-IMAT':'RB imat','H-ECOMAT-72':'Eco-Mat 17mm','H-ECOMAT-80':'Eco-Mat 16mm'};
     html+='<b style="font-size:11px;display:block;margin-bottom:4px">Imat</b>';
-    html+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px"><thead><tr style="border-bottom:1px solid var(--bor2)"><th style="text-align:left;padding:4px 6px">Zone</th><th style="text-align:right;padding:4px 6px">m²</th><th style="text-align:right;padding:4px 6px">Rollen (60m²)</th></tr></thead><tbody>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px"><thead><tr style="border-bottom:1px solid var(--bor2)"><th style="text-align:left;padding:4px 6px">Zone</th><th style="text-align:right;padding:4px 6px">m²</th><th style="text-align:right;padding:4px 6px">Rollen</th></tr></thead><tbody>';
     imatZones.forEach(function(z){
       const a=Math.round(polyArea(z.pts)/(pxPerMeter*pxPerMeter)*10)/10;
       totImat+=a;
-      html+='<tr style="border-bottom:1px solid var(--bor2)"><td style="padding:4px 6px">'+(z.label||z.zoneName||'Imat zone')+'</td><td style="text-align:right;padding:4px 6px">'+a+'</td><td style="text-align:right;padding:4px 6px;font-weight:700">'+Math.ceil(a/60)+'</td></tr>';
+      const rSz=imatRolM2[z.imatType||'RB-IMAT']||60;
+      const tLbl=imatTypeLabel[z.imatType||'RB-IMAT']||'RB imat';
+      html+='<tr style="border-bottom:1px solid var(--bor2)"><td style="padding:4px 6px">'+(z.label||z.zoneName||'Imat zone')+'<br><span style="font-size:10px;color:var(--tx2)">'+tLbl+'</span></td><td style="text-align:right;padding:4px 6px">'+a+'</td><td style="text-align:right;padding:4px 6px;font-weight:700">'+Math.ceil(a/rSz)+'<br><span style="font-size:10px;color:var(--tx2)">'+rSz+'m²/rol</span></td></tr>';
     });
     totImat=Math.round(totImat*10)/10;
-    html+='<tr style="border-top:2px solid var(--bor);font-weight:700"><td style="padding:4px 6px">TOTAAL</td><td style="text-align:right;padding:4px 6px">'+totImat+'m²</td><td style="text-align:right;padding:4px 6px">'+Math.ceil(totImat/60)+' rollen</td></tr>';
+    html+='<tr style="border-top:2px solid var(--bor);font-weight:700"><td style="padding:4px 6px">TOTAAL</td><td style="text-align:right;padding:4px 6px">'+totImat+'m²</td><td style="text-align:right;padding:4px 6px">zie boven</td></tr>';
     html+='</tbody></table>';
   }
   html+='</div>';
@@ -11919,6 +11942,9 @@ function buildKlantOfferteBlokken(){
   var boringEl=elements.find(function(e){return e.type==='boring';});
   var hasBoring=!!boringEl;
   var boringDiepte=boringEl&&boringEl.depth?boringEl.depth:null;
+  var boringOppEl=elements.find(function(e){return e.type==='boring-opp';});
+  var hasBoringOpp=!!boringOppEl;
+  var boringOppLen=boringOppEl&&boringOppEl.length?boringOppEl.length:null;
 
   var ontijzEl=elements.find(function(e){return e.type==='iron';});
   var hasOntijz=!!ontijzEl;
@@ -11983,6 +12009,12 @@ function buildKlantOfferteBlokken(){
     prijs:0,
     actief:true
   });
+  if(hasBoringOpp)blokken.push({
+    titel:'Oppervlakteboring',
+    omschrijving:'Oppervlakteboring van +/- '+(boringOppLen?boringOppLen:'[lengte]')+' meter.',
+    prijs:0,
+    actief:true
+  });
 
   if(hasPomp)blokken.push({
     titel:'Verpomping',
@@ -12036,6 +12068,9 @@ const STANDAARD_BLOKKEN=[
    prijs:0},
   {titel:'Diepteboring',
    omschrijving:'Diepteboring van +/- [diepte] meter, diameter 125 mm. De pompput wordt kwalitatief afgewerkt met modulair Stakkabox systeem en voorzien van een bodemplaat en HDPE deksel met staalframe (belasting tot 1,5 ton). Er wordt steeds een wateranalyse uitgevoerd door een onafhankelijk labo om de exacte waterkwaliteit te bepalen.',
+   prijs:0},
+  {titel:'Oppervlakteboring',
+   omschrijving:'Oppervlakteboring van +/- [lengte] meter.',
    prijs:0},
   {titel:'Verpomping',
    omschrijving:'[pompnaam]. De pomp wordt op trillingsdempers gemonteerd voor een stille en duurzame werking.',
@@ -12224,7 +12259,7 @@ function checkBlokGekoppeld(t){
   if(vrij.some(function(v){return t.toLowerCase().indexOf(v.toLowerCase())>=0;}))return{ok:true};
   var proj=activeProjectId?getProjects().find(function(p){return p.id===activeProjectId;}):null;
   var extra=proj?proj.extraMat||[]:[];
-  var kop={'Verpomping':{pt:'pump',cc:['Pompen']},'Diepteboring':{pt:'boring',cc:['Diepteboring']},'Waterbehandeling':{pt:'iron',cc:['Ontijzering']},'Regenmelder':{pt:'rainsensor',cc:['Controllers']},'Bodemvochtigheidssensor':{pt:'soilsensor',cc:['Controllers']},'Wifi':{pt:'wifimod',cc:['Controllers']},'Bronkraan':{pt:'tappost',cc:['Diversen']}};
+  var kop={'Verpomping':{pt:'pump',cc:['Pompen']},'Diepteboring':{pt:'boring',cc:['Diepteboring']},'Oppervlakteboring':{pt:'boring-opp',cc:['Oppervlakteboring']},'Waterbehandeling':{pt:'iron',cc:['Ontijzering']},'Regenmelder':{pt:'rainsensor',cc:['Controllers']},'Bodemvochtigheidssensor':{pt:'soilsensor',cc:['Controllers']},'Wifi':{pt:'wifimod',cc:['Controllers']},'Bronkraan':{pt:'tappost',cc:['Diversen']}};
   var k=Object.keys(kop).find(function(x){return t.toLowerCase().indexOf(x.toLowerCase())>=0;});
   if(!k)return{ok:true};
   if(elements.some(function(e){return e.type===kop[k].pt;}))return{ok:true};
@@ -13353,7 +13388,7 @@ function _initTakenPanel(){
 }
 
 
-// STANDAARDTAKEN v125
+// STANDAARDTAKEN v138
 function _voegStandaardTakenToe(){
   var bestaand = getTaken();
   var toe = [];
@@ -13755,7 +13790,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v137</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v138</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -13906,14 +13941,24 @@ function buildOfferteMatLines(stored,extra){
   var totD=0;dz.forEach(function(z){totD+=Math.round(polyArea(z.pts)/(pxPerMeter*pxPerMeter)/((z.spacing||30)/100)*10)/10;});
   if(totD>0){const ci=CATALOG.find(function(c){return c.id==='DRIP-M';});const sp=ci?stored['DRIP-M']||{}:{};
     lines.push({omschrijving:'Druppeldarm',aantal:Math.ceil(totD),eenh:'m',ink:sp.inkoop||0,marge:sp.marge!==undefined?sp.marge:20,btw:sp.btw!==undefined?sp.btw:21,margeAan:true});}
-  // Imat zones: rollen imat + main line B.52.010
+  // Imat zones: rollen imat per type + main line B.52.010
   const imatZones = zones.filter(z=>z.zoneType==='imat');
   if(imatZones.length>0){
-    const totImatM2 = imatZones.reduce((s,z)=>s+(z.areaM2||0),0);
-    const imatRollen = Math.ceil(totImatM2/60);
-    const imatCi = CATALOG.find(c=>c.id==='RB-IMAT');
-    const imatSp = imatCi?stored['RB-IMAT']||{}:{};
-    lines.push({omschrijving:'Rain Bird imat druppelmat (60m² per rol)',aantal:imatRollen,eenh:'rol',ink:imatSp.inkoop||0,marge:imatSp.marge!==undefined?imatSp.marge:20,btw:imatSp.btw!==undefined?imatSp.btw:21,margeAan:true});
+    const imatRolM2={'RB-IMAT':60,'H-ECOMAT-72':72,'H-ECOMAT-80':80};
+    const rollenPerType={};
+    imatZones.forEach(function(z){
+      const tp=z.imatType||'RB-IMAT';
+      const rSz=imatRolM2[tp]||60;
+      rollenPerType[tp]=(rollenPerType[tp]||0)+(z.areaM2||0);
+    });
+    Object.keys(rollenPerType).forEach(function(tp){
+      const rSz=imatRolM2[tp]||60;
+      const rollen=Math.ceil(rollenPerType[tp]/rSz);
+      const ci=CATALOG.find(c=>c.id===tp);
+      const sp=ci?stored[tp]||{}:{};
+      const omschr=ci?ci.omschrijving:(tp==='RB-IMAT'?'Rain Bird imat druppelmat (60m² per rol)':tp);
+      lines.push({omschrijving:omschr,aantal:rollen,eenh:'rol',ink:sp.inkoop||0,marge:sp.marge!==undefined?sp.marge:20,btw:sp.btw!==undefined?sp.btw:21,margeAan:true});
+    });
   }
   // Imat main line (B.52.010) — rollen van 30m
   if(pipeByDia['imat']&&pipeByDia['imat']>0){
@@ -16732,13 +16777,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v137</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v138</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v137</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v138</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -17077,7 +17122,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'bw-editor-v6';
+    const CACHE = 'bw-editor-v7';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
