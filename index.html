@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v138</title>
+<title>Beregeningsplan Editor v139</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v138 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v139 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -365,6 +365,7 @@ button.ub.pri:hover{background:#1250a0}
   </div>
 
 
+  <div id="sb-spr-wrap">
   <div class="sbh">Sproeier body</div>
   <div class="ctrl">
     <select id="body-sel" onchange="onBodyCatChange()" style="width:100%;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)">
@@ -400,8 +401,9 @@ button.ub.pri:hover{background:#1250a0}
       selEl.dir=parseFloat(this.value);redraw();
     }">
   </div>
+  </div>
 
-  <div class="sbh">Geselecteerd</div>
+  <div class="sbh" id="sb-geselecteerd-header">Geselecteerd</div>
   <div id="sel-panel" style="color:var(--tx2);font-size:11px">Niets geselecteerd</div>
 
   <div class="sbh">Telling</div>
@@ -10469,6 +10471,20 @@ function updateCounts(){
 // ── SEL PANEL ──
 function updateSelPanel(){
   const p=document.getElementById('sel-panel');
+  // Update sidebar context: show/hide sproeier body/nozzle/opties sections
+  const sprWrap=document.getElementById('sb-spr-wrap');
+  const selHeader=document.getElementById('sb-geselecteerd-header');
+  const isSprSel=selEl&&!selEl._txt&&!selEl._zone&&EDEFS[selEl.type]&&EDEFS[selEl.type].cat==='spr';
+  const nothingSel=!selEl&&selPipe===null&&selCable===null;
+  if(sprWrap)sprWrap.style.display=(nothingSel||isSprSel)?'':'none';
+  if(selHeader){
+    if(selEl&&selEl._zone){const _z=plantZones[selEl._idx];selHeader.textContent=_z?(_z.label||_z.zoneName||'Zone'):'Zone';}
+    else if(selEl&&selEl._txt)selHeader.textContent='Tekstvak';
+    else if(selPipe!==null&&selPipe>=0)selHeader.textContent='Leiding';
+    else if(selCable!==null&&selCable>=0)selHeader.textContent='Kabel';
+    else if(selEl&&EDEFS[selEl.type])selHeader.textContent=EDEFS[selEl.type].name;
+    else selHeader.textContent='Geselecteerd';
+  }
   // Handle selected pipe
   if(selPipe!==null&&selPipe>=0&&selPipe<pipes.length){
     const pipe=pipes[selPipe];
@@ -13388,7 +13404,7 @@ function _initTakenPanel(){
 }
 
 
-// STANDAARDTAKEN v138
+// STANDAARDTAKEN v139
 function _voegStandaardTakenToe(){
   var bestaand = getTaken();
   var toe = [];
@@ -13790,7 +13806,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v138</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v139</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -16777,13 +16793,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v138</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v139</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v138</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v139</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -17122,7 +17138,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'bw-editor-v7';
+    const CACHE = 'bw-editor-v8';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
