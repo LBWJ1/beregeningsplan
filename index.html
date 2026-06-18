@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v142</title>
+<title>Beregeningsplan Editor v143</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v142 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v143 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -8895,6 +8895,19 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 let mode='place',selType_='popup';
 var cables=[],rotDragging=false,cableStart=null,freeCableDrawing=false,freeCable=[];
 var selPipe=null,selCable=null;
+// Leidingpunt-drag state
+var _dragPipeIdx=null,_dragPtIdx=null,_dragPipeOX=0,_dragPipeOY=0,_dragPipeWhole=false;
+function _pipeRecalcLen(p){
+  if(!p||!p.pts||p.pts.length<2)return;
+  let l=0;for(let i=1;i<p.pts.length;i++)l+=Math.hypot(p.pts[i].x-p.pts[i-1].x,p.pts[i].y-p.pts[i-1].y);
+  p.len=Math.round(l/pxPerMeter*10)/10;
+}
+function _hitPipePt(x,y,pi){
+  const p=pipes[pi];if(!p||!p.pts)return -1;
+  const r=10/zoomLevel;
+  for(let i=0;i<p.pts.length;i++){if(Math.hypot(x-p.pts[i].x,y-p.pts[i].y)<=r)return i;}
+  return -1;
+}
 var _cableType='9',_cableStyle='straight',_cablePanelOpen=false;
 let elements=[],pipes=[],textNotes=[],plantZones=[],freePipe=[];
 let pipeStart=null,polyPts=[],rectStart=null,freeDrawing=false;
@@ -9212,7 +9225,7 @@ function setMode(m){
 }
 function autoAssignBody(el){
   if(!el||!EDEFS[el.type]||EDEFS[el.type].cat!=='spr')return;
-  if(el.bodyKey&&!el._autoBody)return; // manual body set by user — don't override
+  if(el.bodyKey&&el._autoBody===false)return; // handmatig gekozen door gebruiker — niet overschrijven
   const r=el.radius/pxPerMeter;
   let key='';
   if(r<4)key='rb1804';
@@ -9421,11 +9434,28 @@ function cDown(e){
       selEl=el;selPipe=null;selCable=null;
       dragging=true;dragOX=x-el.x;dragOY=y-el.y;updateSelPanel();
     } else {
+      // Als al een vrije leiding geselecteerd is: check eerst op punt-handles
+      if(selPipe!==null&&selPipe>=0&&selPipe<pipes.length&&pipes[selPipe].pts){
+        const ptHit=_hitPipePt(x,y,selPipe);
+        if(ptHit>=0){
+          // Sleep dit specifieke punt
+          pushUndo();
+          _dragPipeIdx=selPipe;_dragPtIdx=ptHit;_dragPipeWhole=false;
+          dc.style.cursor='grabbing';redraw();return;
+        }
+        // Klik op de lijn zelf → sleep hele leiding
+        if(hitPipe(x,y)===selPipe){
+          pushUndo();
+          _dragPipeIdx=selPipe;_dragPtIdx=null;_dragPipeWhole=true;
+          _dragPipeOX=x;_dragPipeOY=y;
+          dc.style.cursor='grabbing';redraw();return;
+        }
+      }
       const pi=hitPipe(x,y);
       const ci=hitCable(x,y);
-      if(pi>=0){selPipe=pi;selCable=null;selEl=null;updateSelPanel();}
-      else if(ci>=0){selCable=ci;selPipe=null;selEl=null;updateSelPanel();}
-      else{selPipe=null;selCable=null;selEl=null;updateSelPanel();}
+      if(pi>=0){selPipe=pi;selCable=null;selEl=null;_dragPipeIdx=null;updateSelPanel();}
+      else if(ci>=0){selCable=ci;selPipe=null;selEl=null;_dragPipeIdx=null;updateSelPanel();}
+      else{selPipe=null;selCable=null;selEl=null;_dragPipeIdx=null;updateSelPanel();}
     }
   }
   if(hitLogo(x,y)&&mode==='select'){
@@ -9580,6 +9610,19 @@ function cMove(e){
     if(dirIn){dirIn.value=selEl.dir;document.getElementById('dv').textContent=selEl.dir;}
     updateSelPanel();redraw();return;
   }
+  // Leidingpunt- of hele-leiding-drag
+  if(_dragPipeIdx!==null&&_dragPipeIdx>=0&&_dragPipeIdx<pipes.length){
+    const p=pipes[_dragPipeIdx];
+    if(_dragPipeWhole){
+      const dx=x-_dragPipeOX,dy=y-_dragPipeOY;
+      if(p.pts)p.pts=p.pts.map(pt=>({x:pt.x+dx,y:pt.y+dy}));
+      else{p.x1+=dx;p.y1+=dy;p.x2+=dx;p.y2+=dy;}
+      _dragPipeOX=x;_dragPipeOY=y;
+    } else if(_dragPtIdx!==null&&p.pts&&_dragPtIdx<p.pts.length){
+      p.pts[_dragPtIdx]={x,y};
+    }
+    _pipeRecalcLen(p);redraw();return;
+  }
   if(dragging&&selEl){
     if(selEl._txt){textNotes[selEl._idx].x=x-dragOX;textNotes[selEl._idx].y=y-dragOY;selEl.x=textNotes[selEl._idx].x;selEl.y=textNotes[selEl._idx].y;}
     else if(selEl._zone){
@@ -9595,7 +9638,14 @@ function cMove(e){
   // Pipe preview (no point adding - click-click mode)
   if(freeDrawing&&mode==='pipe'){window._freePipePreview={x,y};redraw();}
   hoveredEl=hitTest(x,y);
-  if(hoveredEl&&hoveredEl._rotHandle){dc.style.cursor='grab';} else if(mode==='select'){dc.style.cursor='default';}
+  if(hoveredEl&&hoveredEl._rotHandle){dc.style.cursor='grab';}
+  else if(mode==='select'){
+    // Cursor op punt-handle van geselecteerde vrije leiding
+    if(selPipe!==null&&selPipe>=0&&selPipe<pipes.length&&pipes[selPipe].pts){
+      const ph=_hitPipePt(x,y,selPipe);
+      dc.style.cursor=ph>=0?'grab':(hitPipe(x,y)===selPipe?'move':'default');
+    } else {dc.style.cursor='default';}
+  }
   redraw();
   // preview
   if(mode==='pipe'&&pipeStart&&document.getElementById('pipe-style').value==='straight'){
@@ -9650,6 +9700,11 @@ function cUp(e){
   if(calibMode) return;
   if(rotDragging){rotDragging=false;updateSelPanel();}
   if(dragging){dragging=false;updateSelPanel();}
+  if(_dragPipeIdx!==null){
+    _pipeRecalcLen(pipes[_dragPipeIdx]);
+    _dragPipeIdx=null;_dragPtIdx=null;_dragPipeWhole=false;
+    dc.style.cursor='default';updateSelPanel();redraw();
+  }
 
   const{x,y}=getPos(e);
   // Arc step 1 ends on mouseup: startAngle is set, now wait for click to set endAngle
@@ -10413,7 +10468,17 @@ function redraw(){
     ctx.beginPath();
     if(p.type==='straight'){ctx.moveTo(p.x1,p.y1);ctx.lineTo(p.x2,p.y2);}
     else if(p.pts&&p.pts.length>1){ctx.moveTo(p.pts[0].x,p.pts[0].y);p.pts.forEach(pt=>ctx.lineTo(pt.x,pt.y));}
-    ctx.stroke();ctx.restore();
+    ctx.stroke();
+    // Punt-handles tonen voor vrije leidingen
+    if(p.pts&&p.pts.length>1){
+      p.pts.forEach((pt,i)=>{
+        ctx.beginPath();ctx.arc(pt.x,pt.y,6/zoomLevel,0,Math.PI*2);
+        const isActive=_dragPtIdx===i&&_dragPipeIdx===selPipe;
+        ctx.fillStyle=isActive?'#f59e0b':(i===0||i===p.pts.length-1?'#1a56db':'#fff');
+        ctx.strokeStyle='#1a56db';ctx.lineWidth=2;ctx.fill();ctx.stroke();
+      });
+    }
+    ctx.restore();
   }
   // Highlight selected cable
   if(selCable!==null&&selCable>=0&&selCable<cables.length){
@@ -13455,7 +13520,7 @@ function _initTakenPanel(){
 }
 
 
-// STANDAARDTAKEN v142
+// STANDAARDTAKEN v143
 function _voegStandaardTakenToe(){
   var bestaand = getTaken();
   var toe = [];
@@ -13857,7 +13922,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v142</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v143</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -16872,13 +16937,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v142</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v143</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v142</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v143</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -17217,7 +17282,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'bw-editor-v11';
+    const CACHE = 'bw-editor-v12';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
