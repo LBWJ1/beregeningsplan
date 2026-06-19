@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v144</title>
+<title>Beregeningsplan Editor v145</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v144 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v145 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -10734,6 +10734,24 @@ function updateSelPanel(){
     if(rs){rs.value=Math.min(r,15);document.getElementById('rv').textContent=Math.min(r,15);}
     if(as){as.value=selEl.arc||360;document.getElementById('av').textContent=selEl.arc||360;}
     if(ds){ds.value=selEl.dir||0;document.getElementById('dv').textContent=selEl.dir||0;}
+    // Sync body/nozzle dropdown naar het geselecteerde element
+    // Gebruik _suppressBodyApply zodat onBodyCatChange de nozzle-lijst vult
+    // maar het element NIET overschrijft
+    const bd=document.getElementById('body-sel');
+    if(bd&&selEl.bodyKey&&BODIES[selEl.bodyKey]){
+      const bCatId=BODIES[selEl.bodyKey].catId||'';
+      if(bCatId){
+        window._suppressBodyApply=true;
+        bd.value=bCatId;
+        onBodyCatChange();
+        window._suppressBodyApply=false;
+        const nSel=document.getElementById('nozzle-sel');
+        if(nSel){
+          if(selEl.nozzleCatId)nSel.value=selEl.nozzleCatId;
+          else if(selEl.nozzleKey==='__body__'||!selEl.nozzleKey)nSel.value='__body__';
+        }
+      }
+    }
   }
   p.innerHTML=`<div style="margin-bottom:5px"><span style="color:${d.color};font-weight:700">${d.name}</span><br><span>${d.label}${selEl.num}</span></div>
   <label>Kleur:</label>
@@ -10753,7 +10771,7 @@ function updateSelPanel(){
     ${['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Onbenoemd'].map(z=>`<option ${selEl.zoneName===z?'selected':''}>${z}</option>`).join('')}
     </select>
   <label>Debiet override (l/min, 0=auto):</label><input type="number" min="0" step="0.1" value="${selEl.flowOverride||0}" style="width:70px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.flowOverride=parseFloat(this.value)||0">
-  <label>Straal (m):</label><input type="number" min="0.5" max="25" step="0.5" value="${r}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.radius=parseFloat(this.value)*pxPerMeter;redraw()">
+  <label>Straal (m):</label><input type="number" min="0.5" max="25" step="0.5" value="${r}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.radius=parseFloat(this.value)*pxPerMeter;autoAssignBody(selEl);updateSelPanel();redraw()">
   <label>Arc (°):</label><input type="number" min="15" max="360" step="15" value="${selEl.arc||360}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.arc=parseFloat(this.value);redraw()">
   <label>Richting (°):</label><input type="number" min="0" max="359" step="5" value="${selEl.dir||0}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.dir=parseFloat(this.value);redraw()">`:
   selEl.type==='meter'?`<label>Breedte (cm):</label><input type="number" value="${selEl.dimW||0}" style="width:60px;font-size:11px;padding:3px 5px;border:1px solid var(--bor2);border-radius:5px;font-family:inherit;background:var(--sur);color:var(--tx)" oninput="selEl.dimW=parseFloat(this.value);redraw()">
@@ -13520,7 +13538,7 @@ function _initTakenPanel(){
 }
 
 
-// STANDAARDTAKEN v144
+// STANDAARDTAKEN v145
 function _voegStandaardTakenToe(){
   var bestaand = getTaken();
   var toe = [];
@@ -13922,7 +13940,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v144</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v145</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -15310,7 +15328,8 @@ function applyBodyNozzleCat(){
     bodyCatId, nozzleCatId:nozzleCatId==='__body__'?'':nozzleCatId};
 
   // Pas toe op geselecteerd element (selEl bewaard vóór selType-aanroep)
-  if(_savedSelEl){
+  // _suppressBodyApply=true tijdens dropdown-sync vanuit updateSelPanel — niet toepassen op element
+  if(_savedSelEl&&!window._suppressBodyApply){
     const actual=elements.find(function(e){return e.id===_savedSelEl.id;});
     if(actual){
       actual.type=body.type; // type volgt body-keuze
@@ -16940,13 +16959,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v144</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v145</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v144</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v145</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -17285,7 +17304,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'bw-editor-v13';
+    const CACHE = 'bw-editor-v145';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
