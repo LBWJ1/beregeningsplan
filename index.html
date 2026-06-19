@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Beregeningsplan Editor v145</title>
+<title>Beregeningsplan Editor v146</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <span style="font-weight:700;font-size:15px;color:var(--bl)">💧 Beregeningsplan Editor</span>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v145 — Rainbird & Hunter</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v146 — Rainbird & Hunter</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -10855,8 +10855,15 @@ function recalcZone(idx,spacing){
 
 // ── UNDO ──
 let undoStack=[],redoStack=[];
+var _autoSaveDebounce=null;
+function triggerAutoSave(){
+  // Debounced auto-save: 30 sec na laatste canvaswijziging
+  if(_autoSaveDebounce)clearTimeout(_autoSaveDebounce);
+  _autoSaveDebounce=setTimeout(function(){if(activeProjectId)autoSaveActiveProject();},30000);
+}
 function pushUndo(){
-  try{undoStack.push(JSON.stringify({elements,pipes,textNotes,plantZones}));if(undoStack.length>50)undoStack.shift();redoStack=[];}catch(e){}
+  try{undoStack.push(JSON.stringify({elements,pipes,cables,textNotes,plantZones}));if(undoStack.length>50)undoStack.shift();redoStack=[];}catch(e){}
+  triggerAutoSave();
 }
 function undo(){undoLast();}
 function undoLast(){
@@ -10864,24 +10871,24 @@ function undoLast(){
   if(pipeStart){pipeStart=null;redraw();return;}
   if(typeof arcDraw!=='undefined'&&arcDraw.step>0&&arcDraw.el){elements=elements.filter(e=>e.id!==arcDraw.el.id);arcDraw={step:0,el:null};updateCounts();redraw();return;}
   if(undoStack.length===0)return;
-  redoStack.push(JSON.stringify({elements,pipes,textNotes,plantZones}));
+  redoStack.push(JSON.stringify({elements,pipes,cables,textNotes,plantZones}));
   const prev=JSON.parse(undoStack.pop());
-  elements=prev.elements||[];pipes=prev.pipes||[];textNotes=prev.textNotes||[];plantZones=prev.plantZones||[];
+  elements=prev.elements||[];pipes=prev.pipes||[];cables=prev.cables||cables||[];textNotes=prev.textNotes||[];plantZones=prev.plantZones||[];
   updateCounts();redraw();selEl=null;updateSelPanel();
 }
 function redoLast(){
   if(redoStack.length===0)return;
-  undoStack.push(JSON.stringify({elements,pipes,textNotes,plantZones}));
+  undoStack.push(JSON.stringify({elements,pipes,cables,textNotes,plantZones}));
   const next=JSON.parse(redoStack.pop());
-  elements=next.elements||[];pipes=next.pipes||[];textNotes=next.textNotes||[];plantZones=next.plantZones||[];
+  elements=next.elements||[];pipes=next.pipes||[];cables=next.cables||cables||[];textNotes=next.textNotes||[];plantZones=next.plantZones||[];
   updateCounts();redraw();selEl=null;updateSelPanel();
 }
 
 function redoAction(){
   if(redoStack.length===0)return;
-  undoStack.push(JSON.stringify({elements,pipes,textNotes,plantZones}));
+  undoStack.push(JSON.stringify({elements,pipes,cables,textNotes,plantZones}));
   const next=JSON.parse(redoStack.pop());
-  elements=next.elements||[];pipes=next.pipes||[];textNotes=next.textNotes||[];plantZones=next.plantZones||[];
+  elements=next.elements||[];pipes=next.pipes||[];cables=next.cables||cables||[];textNotes=next.textNotes||[];plantZones=next.plantZones||[];
   updateCounts();redraw();selEl=null;updateSelPanel();
 }
 function clearAll(){
@@ -13538,7 +13545,7 @@ function _initTakenPanel(){
 }
 
 
-// STANDAARDTAKEN v145
+// STANDAARDTAKEN v146
 function _voegStandaardTakenToe(){
   var bestaand = getTaken();
   var toe = [];
@@ -13940,7 +13947,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v145</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Beregeningsplan Editor v146</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -15471,7 +15478,7 @@ function loadForfaitBlokken(){
 
 function currentProjectData(){
   const proj=getActiveProject();
-  return{elements,pipes,textNotes,plantZones,pxPerMeter,prices,counter,savedAt:new Date().toISOString(),
+  return{elements,pipes,cables,textNotes,plantZones,pxPerMeter,prices,counter,savedAt:new Date().toISOString(),
     klantOfferteBlokken:window._klantOfferteBlokken||null,
     extraMat:proj?proj.extraMat||[]:undefined,
     uren:proj?proj.uren||{}:undefined,
@@ -16334,7 +16341,6 @@ function deleteSubplan(idx){
 function autoSaveActiveProject(){
   if(!activeProjectId)return;
   markeerPlanGewijzigd();
-  autoSaveBundle();
   saveCurrentSubplan();
   const projs=getProjects();
   const idx=projs.findIndex(function(p){return p.id===activeProjectId;});
@@ -16428,6 +16434,8 @@ function deleteProject(id){
   if(activeProjectId===id)activeProjectId=null;renderProjectPanel();
 }
 function exportProjectJSON(id){
+  // Zorg dat de actuele canvasdata opgeslagen is vóór export
+  if(id===activeProjectId)autoSaveActiveProject();
   const proj=getProjects().find(p=>p.id===id);if(!proj)return;
   const blob=new Blob([JSON.stringify({name:proj.name,savedAt:proj.savedAt,...proj.data},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.download=proj.name.replace(/[^a-z0-9]/gi,'_')+'_beregeningsplan.json';
@@ -16959,13 +16967,13 @@ function openHandleiding(){
   // Open PDF in new tab for viewing + download
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v145</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding Beregeningsplan Editor v146</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v145</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding Beregeningsplan Editor v146</span>'
     +'<a href="'+HANDLEIDING_PDF+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+HANDLEIDING_PDF+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -17304,7 +17312,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'bw-editor-v145';
+    const CACHE = 'bw-editor-v146';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
