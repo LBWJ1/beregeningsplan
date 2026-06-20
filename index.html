@@ -14013,7 +14013,7 @@ function generateOfferte(){
   var stored=loadCatalogPrices();
   var html='<div style="font-size:12px">';
   html+='<div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid var(--bor2)"><div><div style="font-size:15px;font-weight:700">Offerte beregening</div><div style="color:var(--tx2)">'+klant+' | Ref: '+ref+'</div></div><div style="text-align:right;color:var(--tx2)">'+datum+'</div></div>';
-  var grandEx=0,grandBTW=0;
+  var grandEx=0,grandBTW=0,grandInk=0;
   // Materials
   var matLines=buildOfferteMatLines(stored,extra);
   // Validatie: items zonder prijs
@@ -14026,7 +14026,7 @@ function generateOfferte(){
       +geenPrijs.map(function(l){return '<li>'+l.omschrijving+'</li>';}).join('')
       +'</ul></div>';
   }
-  if(matLines.length){var s=renderOfferteSection('Materialen',matLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;}
+  if(matLines.length){var s=renderOfferteSection('Materialen',matLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;grandInk+=s.ink;}
   // Uren
   var urenLines=[];
   meds.forEach(function(m,mi){
@@ -14034,14 +14034,14 @@ function generateOfferte(){
     UREN_CATS.forEach(function(cat){tot+=uren[cat.replace(/[^a-zA-Z0-9]/g,'_')+'_'+mi]||0;});
     if(tot>0&&m.tarief>0)urenLines.push({omschrijving:m.naam,aantal:tot,eenh:'u',ink:m.tarief,marge:0,btw:21,margeAan:false});
   });
-  if(urenLines.length){var s=renderOfferteSection('Werkuren',urenLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;}
+  if(urenLines.length){var s=renderOfferteSection('Werkuren',urenLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;grandInk+=s.ink;}
   // Verplaatsing
   var vplLines=[];
   if(verpl.aantal>0){
     if(vt.voorrijdkost>0)vplLines.push({omschrijving:'Voorrijdkost',aantal:verpl.aantal,eenh:'rit',ink:vt.voorrijdkost,marge:0,btw:21,margeAan:false});
     if(vt.kmvergoeding>0&&verpl.km>0)vplLines.push({omschrijving:'Km-vergoeding',aantal:verpl.km*verpl.aantal,eenh:'km',ink:vt.kmvergoeding,marge:0,btw:21,margeAan:false});
   }
-  if(vplLines.length){var s=renderOfferteSection('Verplaatsing',vplLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;}
+  if(vplLines.length){var s=renderOfferteSection('Verplaatsing',vplLines);html+=s.html;grandEx+=s.ex;grandBTW+=s.btw;grandInk+=s.ink;}
   // Forfaitaire posten als aparte sectie
   var _forfait=loadForfaitBlokken();
   var _forfaitActief=_forfait.filter(function(fb){return fb.actief;});
@@ -14057,7 +14057,7 @@ function generateOfferte(){
     _forfaitActief.forEach(function(fb){
       var fbEx=fb.prijs||0;
       var fbBTW=fbEx*0.21;
-      grandEx+=fbEx;grandBTW+=fbBTW;
+      grandEx+=fbEx;grandBTW+=fbBTW;grandInk+=fbEx;
       forfaitHtml+='<tr style="border-bottom:1px solid var(--bor2)">'
         +'<td style="padding:5px 8px">'+fb.titel+'</td>'
         +'<td style="padding:5px 8px;text-align:right">euro'+fbEx.toFixed(2)+'</td>'
@@ -14069,8 +14069,9 @@ function generateOfferte(){
     html+=forfaitHtml;
   }
   html+='<div style="margin-top:16px;padding:12px;background:var(--bl2);border-radius:8px;border:2px solid var(--bl)">'
-    +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Subtotaal excl BTW</span><span style="font-weight:700">euro'+grandEx.toFixed(2)+'</span></div>';
-  html+='<div style="display:flex;justify-content:space-between;color:var(--tx2)"><span>BTW</span><span>euro'+grandBTW.toFixed(2)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--tx2)">Inkoop excl. BTW</span><span style="color:var(--tx2)">euro'+grandInk.toFixed(2)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600">Verkoop excl. BTW</span><span style="font-weight:700">euro'+grandEx.toFixed(2)+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between;color:var(--tx2)"><span>BTW</span><span>euro'+grandBTW.toFixed(2)+'</span></div>'
     +'<div style="display:flex;justify-content:space-between;border-top:1px solid var(--bor2);padding-top:8px;margin-top:8px"><span style="font-size:14px;font-weight:700">TOTAAL incl BTW</span><span style="font-size:14px;font-weight:700;color:var(--bl)">euro'+(grandEx+grandBTW).toFixed(2)+'</span></div>'
     +'</div></div>';
   var oc=document.getElementById('offerte-content');if(oc)oc.innerHTML=html;
@@ -14177,18 +14178,26 @@ function buildOfferteMatLines(stored,extra){
 }
 
 function renderOfferteSection(title,lines){
-  var ex=0,btwa=0;
+  var ex=0,btwa=0,inkTot=0;
   var rows=lines.map(function(l){
     const vk=l.ink*(1+(l.margeAan?l.marge/100:0));
-    const tot=vk*l.aantal;ex+=tot;btwa+=tot*(l.btw/100);
+    const tot=vk*l.aantal;
+    const ink=l.ink*l.aantal;
+    ex+=tot;btwa+=tot*(l.btw/100);inkTot+=ink;
     return '<tr style="border-bottom:1px solid var(--bor2)"><td style="padding:4px 6px">'+l.omschrijving+'</td><td style="padding:4px 6px;text-align:right">'+l.aantal+'</td><td style="padding:4px 6px;font-size:10px;color:var(--tx2)">'+l.eenh+'</td><td style="padding:4px 6px;text-align:right;color:var(--tx2)">'+(l.ink>0?'euro'+l.ink.toFixed(2):'--')+'</td><td style="padding:4px 6px;text-align:right;color:var(--tx2)">'+(l.margeAan?l.marge+'%':'--')+'</td><td style="padding:4px 6px;text-align:right;font-weight:600">'+(l.ink>0?'euro'+vk.toFixed(2):'--')+'</td><td style="padding:4px 6px;text-align:right;color:var(--tx2)">'+l.btw+'%</td><td style="padding:4px 6px;text-align:right;font-weight:700">'+(l.ink>0?'euro'+tot.toFixed(2):'--')+'</td></tr>';
   }).join('');
   var html='<div style="margin-bottom:12px"><b style="display:block;margin-bottom:6px;font-size:13px;color:var(--bl)">'+title+'</b>'
     +'<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="border-bottom:1px solid var(--bor2)"><th style="text-align:left;padding:4px 6px">Omschrijving</th><th style="text-align:right;padding:4px 6px">Aantal</th><th style="padding:4px 6px"></th><th style="text-align:right;padding:4px 6px">Inkoop</th><th style="text-align:right;padding:4px 6px">Marge</th><th style="text-align:right;padding:4px 6px">Verkoop</th><th style="text-align:right;padding:4px 6px">BTW</th><th style="text-align:right;padding:4px 6px">Totaal</th></tr></thead><tbody>'
     +rows
-    +'<tr style="border-top:2px solid var(--bor);font-weight:700;background:var(--bg)"><td colspan="7" style="padding:4px 6px">Subtotaal '+title+'</td><td style="padding:4px 6px;text-align:right">euro'+ex.toFixed(2)+'</td></tr>'
+    +'<tr style="border-top:2px solid var(--bor);font-weight:700;background:var(--bg)">'
+    +'<td colspan="3" style="padding:4px 6px">Subtotaal '+title+'</td>'
+    +'<td style="padding:4px 6px;text-align:right;color:var(--tx2)">euro'+inkTot.toFixed(2)+'</td>'
+    +'<td colspan="2" style="padding:4px 6px;text-align:right">euro'+ex.toFixed(2)+'</td>'
+    +'<td style="padding:4px 6px;text-align:right;color:var(--tx2)">euro'+btwa.toFixed(2)+'</td>'
+    +'<td style="padding:4px 6px;text-align:right">euro'+(ex+btwa).toFixed(2)+'</td>'
+    +'</tr>'
     +'</tbody></table></div>';
-  return {html:html,ex:ex,btw:btwa};
+  return {html:html,ex:ex,btw:btwa,ink:inkTot};
 }
 
 function setCatalogType(catId){
