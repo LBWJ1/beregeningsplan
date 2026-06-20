@@ -12457,55 +12457,165 @@ function checkBlokGekoppeld(t){
 
 
 function showPlanPreview(isConceptplan){
-  var dataUrl = isConceptplan ? _getConceptDataUrl() : _getFinalDataUrl();
   var titel = isConceptplan ? 'Conceptplan' : 'Finaal plan';
   var projNaam = 'beregeningsplan';
   try{var p=getProjects().find(function(x){return x.id===activeProjectId;});if(p&&p.name)projNaam=p.name.replace(/[^a-zA-Z0-9]/g,'_');}catch(e){}
   var bestandsnaam = projNaam + (isConceptplan ? '_concept.png' : '_finaal.png');
 
+  // Snapshot huidige laag- en opaciteitsinstellingen
+  var _savedVis = JSON.parse(JSON.stringify(layerVis));
+  var _savedSprOp = window._sprOp;
+  var _savedZoneAlpha = +(document.getElementById('zone-alpha')||{value:35}).value;
+
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
-  overlay.onclick = function(e){if(e.target===overlay)overlay.remove();};
 
   var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:12px;padding:16px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.3)';
+  box.style.cssText = 'background:#fff;border-radius:12px;padding:16px;max-width:95vw;max-height:95vh;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.3)';
 
+  // Herstelfunctie bij sluiten
+  function sluitPreview(){
+    // Herstel alle lagen en opaciteit naar originele staat
+    Object.assign(layerVis, _savedVis);
+    window._sprOp = _savedSprOp;
+    var zaEl=document.getElementById('zone-alpha');
+    if(zaEl){zaEl.value=_savedZoneAlpha;syncZoneAlpha(_savedZoneAlpha);}
+    var soEl=document.getElementById('spr-op-slider');
+    if(soEl){soEl.value=_savedSprOp;document.getElementById('spr-op-val').textContent=Math.round(_savedSprOp*100)+'%';}
+    // Herstel laagknoppen in header
+    Object.keys(layerVis).forEach(function(k){var b=document.getElementById('lay-'+k);if(b){b.style.opacity=layerVis[k]?'1':'0.45';b.style.fontStyle=layerVis[k]?'':'italic';}});
+    redraw();
+    overlay.remove();
+  }
+  overlay.onclick = function(e){if(e.target===overlay)sluitPreview();};
+
+  // Genereer preview afbeelding op basis van huidige staat
+  function refreshPreview(){
+    var dataUrl = isConceptplan ? _getConceptDataUrl() : _getFinalDataUrl();
+    img.src = dataUrl;
+    dlBtn.href = dataUrl;
+    dlBtn.download = bestandsnaam;
+  }
+
+  // Header
   var hdr = document.createElement('div');
   hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:20px;flex-shrink:0';
-
   var tit = document.createElement('b');
   tit.textContent = titel;
-
   var btnWrap = document.createElement('div');
   btnWrap.style.cssText = 'display:flex;gap:8px';
-
   var dlBtn = document.createElement('a');
   dlBtn.textContent = '⬇ Downloaden';
-  dlBtn.href = dataUrl;
-  dlBtn.download = bestandsnaam;
-  dlBtn.style.cssText = 'padding:7px 16px;background:#1e3a8a;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none';
-
+  dlBtn.style.cssText = 'padding:7px 16px;background:#1e3a8a;color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer';
   var slBtn = document.createElement('button');
   slBtn.textContent = 'Sluiten';
   slBtn.style.cssText = 'padding:7px 16px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;font-size:12px;cursor:pointer';
-  slBtn.onclick = function(){overlay.remove();};
+  slBtn.onclick = sluitPreview;
+  btnWrap.appendChild(dlBtn);btnWrap.appendChild(slBtn);
+  hdr.appendChild(tit);hdr.appendChild(btnWrap);
 
-  btnWrap.appendChild(dlBtn);
-  btnWrap.appendChild(slBtn);
-  hdr.appendChild(tit);
-  hdr.appendChild(btnWrap);
+  // Laag- en transparantie-balk
+  var ctrlBar = document.createElement('div');
+  ctrlBar.style.cssText = 'display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;flex-shrink:0;font-size:11px';
 
+  var ctrlLabel = document.createElement('span');
+  ctrlLabel.textContent = 'Lagen:';
+  ctrlLabel.style.cssText = 'font-weight:600;color:#374151;margin-right:2px';
+  ctrlBar.appendChild(ctrlLabel);
+
+  // Laagknoppen
+  var layers = [
+    {key:'pipes',   label:'Leidingen'},
+    {key:'sprs',    label:'Sproeiers'},
+    {key:'drip',    label:'Druppel'},
+    {key:'zones',   label:'Zones'},
+    {key:'labels',  label:'Labels'},
+    {key:'cables',  label:'Kabels'},
+  ];
+  layers.forEach(function(lyr){
+    var btn = document.createElement('button');
+    btn.textContent = lyr.label;
+    var on = layerVis[lyr.key];
+    btn.style.cssText = 'padding:3px 9px;border-radius:12px;border:1px solid #cbd5e1;font-size:11px;cursor:pointer;background:'+(on?'#1e3a8a':'#e5e7eb')+';color:'+(on?'#fff':'#6b7280');
+    btn.onclick = function(){
+      layerVis[lyr.key] = !layerVis[lyr.key];
+      var now = layerVis[lyr.key];
+      btn.style.background = now?'#1e3a8a':'#e5e7eb';
+      btn.style.color = now?'#fff':'#6b7280';
+      // Ook header-knop bijwerken
+      var hb=document.getElementById('lay-'+lyr.key);
+      if(hb){hb.style.opacity=now?'1':'0.45';hb.style.fontStyle=now?'':'italic';}
+      redraw(); refreshPreview();
+    };
+    ctrlBar.appendChild(btn);
+  });
+
+  // Scheidingslijn
+  var sep = document.createElement('span');
+  sep.style.cssText = 'width:1px;height:18px;background:#cbd5e1;margin:0 4px';
+  ctrlBar.appendChild(sep);
+
+  // Sproeiertransparantie
+  var sprLabel = document.createElement('span');
+  sprLabel.style.cssText = 'color:#374151;font-weight:600';
+  sprLabel.textContent = 'Sproeiers:';
+  ctrlBar.appendChild(sprLabel);
+  var sprValSpan = document.createElement('span');
+  sprValSpan.style.cssText = 'min-width:30px;color:#374151';
+  sprValSpan.textContent = Math.round((window._sprOp||0.4)*100)+'%';
+  var sprSlider = document.createElement('input');
+  sprSlider.type='range';sprSlider.min='0';sprSlider.max='1';sprSlider.step='0.05';
+  sprSlider.value=window._sprOp||0.4;
+  sprSlider.style.cssText='width:70px;cursor:pointer';
+  sprSlider.oninput=function(){
+    window._sprOp=+this.value;
+    sprValSpan.textContent=Math.round(+this.value*100)+'%';
+    var ms=document.getElementById('spr-op-slider');if(ms)ms.value=this.value;
+    var mv=document.getElementById('spr-op-val');if(mv)mv.textContent=Math.round(+this.value*100)+'%';
+    redraw(); refreshPreview();
+  };
+  ctrlBar.appendChild(sprSlider);ctrlBar.appendChild(sprValSpan);
+
+  var sep2 = document.createElement('span');
+  sep2.style.cssText = 'width:1px;height:18px;background:#cbd5e1;margin:0 4px';
+  ctrlBar.appendChild(sep2);
+
+  // Zonetransparantie
+  var zoneLabel = document.createElement('span');
+  zoneLabel.style.cssText = 'color:#374151;font-weight:600';
+  zoneLabel.textContent = 'Zones:';
+  ctrlBar.appendChild(zoneLabel);
+  var zoneValSpan = document.createElement('span');
+  zoneValSpan.style.cssText = 'min-width:30px;color:#374151';
+  zoneValSpan.textContent = _savedZoneAlpha+'%';
+  var zoneSlider = document.createElement('input');
+  zoneSlider.type='range';zoneSlider.min='0';zoneSlider.max='100';zoneSlider.step='5';
+  zoneSlider.value=_savedZoneAlpha;
+  zoneSlider.style.cssText='width:70px;cursor:pointer';
+  zoneSlider.oninput=function(){
+    zoneValSpan.textContent=this.value+'%';
+    var mz=document.getElementById('zone-alpha');
+    if(mz){mz.value=this.value;document.getElementById('zone-alpha-val').textContent=this.value+'%';}
+    syncZoneAlpha(+this.value);
+    redraw(); refreshPreview();
+  };
+  ctrlBar.appendChild(zoneSlider);ctrlBar.appendChild(zoneValSpan);
+
+  // Preview afbeelding
   var imgWrap = document.createElement('div');
-  imgWrap.style.cssText = 'overflow:auto;flex:1';
+  imgWrap.style.cssText = 'overflow:auto;flex:1;min-height:0';
   var img = document.createElement('img');
-  img.src = dataUrl;
   img.style.cssText = 'max-width:100%;height:auto;border:1px solid #eee;border-radius:4px;display:block';
   imgWrap.appendChild(img);
 
   box.appendChild(hdr);
+  box.appendChild(ctrlBar);
   box.appendChild(imgWrap);
   overlay.appendChild(box);
   document.body.appendChild(overlay);
+
+  // Eerste render
+  refreshPreview();
 }
 
 function _getFinalDataUrl(){
@@ -18033,6 +18143,7 @@ function fbVerstuur(){
 
 // ── CHANGELOG / WAT IS NIEUW ──
 var CHANGELOG = {
+  165: ['🗺 Conceptplan & Finaal plan: lagen en transparantie aanpassen vóór het downloaden'],
   164: ['📐 T-stukken in leidingen zijn kleiner en krijgen de diameter van de hoofdleiding', '⚠️ Offerte: waarschuwing bij materialen zonder inkoopprijs'],
   163: ['🖱 Straal-slider volgt nu correct mee bij aanpassen via muiswiel'],
   162: ['🖱 Muiswiel arc: kleinere stappen — Shift+muiswiel straal wijzigt nu ook de body'],
@@ -18044,7 +18155,7 @@ var CHANGELOG = {
   146: ['💾 Kabels worden correct meegesaved in de bundel (.bwb)', '⏱ Auto-save: wijzigingen worden automatisch opgeslagen binnen 30 seconden'],
   145: ['🔧 Sproeier-eigenschappen (body/nozzle) worden correct gesynchroniseerd tussen zones']
 };
-var HUIDIG_VERSIE = 164;
+var HUIDIG_VERSIE = 165;
 
 function changelogSluiten(){
   document.getElementById('bw-changelog-modal').style.display='none';
