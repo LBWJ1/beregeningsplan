@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SunnyRain Studio — Beregeningsplan Editor v162</title>
+<title>SunnyRain Studio — Beregeningsplan Editor v163</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -93,7 +93,7 @@ button.ub.pri:hover{background:#1250a0}
   <input type="file" id="fi" accept=".pdf,image/*" style="display:none" onchange="loadFile(event)">
   
   <svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" height="52" width="130" style="vertical-align:middle;display:inline-block"><g transform="translate(10,15)"><path d="M44 6 C44 6 18 38 18 56 C18 72 29 83 44 83 C59 83 70 72 70 56 C70 38 44 6 44 6 Z" fill="#e0f2fe" stroke="#0891b2" stroke-width="2"/><circle cx="44" cy="54" r="13" fill="#f59e0b"/><g stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round"><line x1="44" y1="36" x2="44" y2="31"/><line x1="44" y1="72" x2="44" y2="77"/><line x1="26" y1="54" x2="21" y2="54"/><line x1="62" y1="54" x2="67" y2="54"/><line x1="31" y1="41" x2="27" y2="37"/><line x1="57" y1="41" x2="61" y2="37"/><line x1="31" y1="67" x2="27" y2="71"/><line x1="57" y1="67" x2="61" y2="71"/></g><circle cx="30" cy="93" r="3" fill="#0891b2" opacity="0.4"/><circle cx="44" cy="98" r="4" fill="#0891b2" opacity="0.6"/><circle cx="58" cy="93" r="3" fill="#0891b2" opacity="0.4"/></g><text x="95" y="66" font-size="34" font-weight="700" fill="#1e3a8a" letter-spacing="-0.5">Sunny<tspan fill="#0891b2">Rain</tspan></text><text x="97" y="90" font-size="12" fill="#64748b" letter-spacing="5">STUDIO</text><line x1="95" y1="98" x2="340" y2="98" stroke="#0891b2" stroke-width="1" opacity="0.2"/></svg>
-  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v162 — Irrigatiesoftware</span>
+  <span id="ver-badge" style="font-size:11px;color:var(--tx2);background:var(--bg2,#f0f4f8);border:1px solid var(--bor2);border-radius:10px;padding:2px 8px">v163 — Irrigatiesoftware</span>
   <div style="flex:1"></div>
   <button class="b" onclick="openProjectManager()">📁 Projecten</button>
   <button class="b" onclick="openModal('scale-panel')">📐 Schaal</button>
@@ -13976,7 +13976,7 @@ function printKlantOfferte(){
   }
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>SunnyRain Studio — Beregeningsplan Editor v162</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>SunnyRain Studio — Beregeningsplan Editor v163</title>'
     +'<style>*{box-sizing:border-box}body{margin:0;padding:20mm;font-family:Arial,sans-serif;font-size:13px;color:#222}'
     +'@media print{body{padding:10mm}@page{margin:10mm;size:A4}}</style>'
     +'</head><body>');
@@ -17011,13 +17011,13 @@ function openHandleiding(){
     ? HANDLEIDING_PDF_PARTNER : HANDLEIDING_PDF_STANDAARD;
   var win=window.open('','_blank');
   if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
-  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding SunnyRain Studio v162</title>'
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Handleiding SunnyRain Studio v163</title>'
     +'<style>body{margin:0;padding:0;background:#555;display:flex;flex-direction:column;height:100vh;}'
     +'.bar{background:#1e3a8a;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}'
     +'.bar a{color:#93c5fd;font-size:13px;}'
     +'embed{flex:1;width:100%;border:none;}</style>'
     +'</head><body>'
-    +'<div class="bar"><span style="font-weight:700">📖 Handleiding SunnyRain Studio v162</span>'
+    +'<div class="bar"><span style="font-weight:700">📖 Handleiding SunnyRain Studio v163</span>'
     +'<a href="'+pdf+'" download="handleiding-beregeningsplan-v70.pdf">⬇ Download PDF</a></div>'
     +'<embed src="'+pdf+'" type="application/pdf" width="100%" height="100%">'
     +'</body></html>');
@@ -17078,13 +17078,13 @@ dc.addEventListener('wheel',function(e){
     document.getElementById('av').textContent=newA;
     updateSelPanel();redraw();e.preventDefault();return;
   }
+  var _shiftWheel=false;
   if(e.shiftKey){
+    _shiftWheel=true;
     const cur=selEl.radius/pxPerMeter;
     const newR=Math.max(0.3,Math.min(15,cur+step*0.1));
     selEl.radius=Math.round(newR*10)/10*pxPerMeter;
     autoAssignBody(selEl);
-    const rs=document.getElementById('radius-slider');
-    if(rs){rs.value=Math.round(newR*10)/10;document.getElementById('rv').textContent=Math.round(newR*10)/10;}
   } else {
     const newArc=Math.max(15,Math.min(360,(selEl.arc||360)+step*1));
     selEl.arc=newArc;
@@ -17092,6 +17092,11 @@ dc.addEventListener('wheel',function(e){
     if(as){as.value=newArc;document.getElementById('av').textContent=newArc;}
   }
   updateSelPanel();redraw();
+  if(_shiftWheel){
+    const rs=document.getElementById('radius-slider');
+    const rVal=Math.round(selEl.radius/pxPerMeter*10)/10;
+    if(rs){rs.value=rVal;document.getElementById('rv').textContent=rVal;}
+  }
 },{passive:false});
 
 // Ctrl+wheel = zoom
@@ -17357,7 +17362,7 @@ document.addEventListener('keydown',e=>{
 if('serviceWorker' in navigator){
   // Inline service worker via blob URL
   const swCode = `
-    const CACHE = 'sunnyrain-editor-v162';
+    const CACHE = 'sunnyrain-editor-v163';
     self.addEventListener('install', e => {
       e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
       self.skipWaiting();
@@ -17992,7 +17997,7 @@ function fbVerstuur(){
   var params={
     name: bp.bedrijfsnaam||'(onbekend)',
     type: type,
-    versie: '162',
+    versie: '163',
     bedrijf: bp.bedrijfsnaam||'(onbekend)',
     email: bp.email||'(geen e-mail)',
     bericht: bericht
@@ -18005,6 +18010,7 @@ function fbVerstuur(){
 
 // ── CHANGELOG / WAT IS NIEUW ──
 var CHANGELOG = {
+  163: ['🖱 Straal-slider volgt nu correct mee bij aanpassen via muiswiel'],
   162: ['🖱 Muiswiel arc: kleinere stappen — Shift+muiswiel straal wijzigt nu ook de body'],
   161: ['🐛 Opslaan bij grote PDF-projecten gerepareerd — knoppen bevriezen niet meer'],
   160: ['📖 Twee handleidingen: standaard- en partnerversie beschikbaar op maat van je licentie'],
@@ -18014,7 +18020,7 @@ var CHANGELOG = {
   146: ['💾 Kabels worden correct meegesaved in de bundel (.bwb)', '⏱ Auto-save: wijzigingen worden automatisch opgeslagen binnen 30 seconden'],
   145: ['🔧 Sproeier-eigenschappen (body/nozzle) worden correct gesynchroniseerd tussen zones']
 };
-var HUIDIG_VERSIE = 162;
+var HUIDIG_VERSIE = 163;
 
 function changelogSluiten(){
   document.getElementById('bw-changelog-modal').style.display='none';
