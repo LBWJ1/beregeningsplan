@@ -8927,6 +8927,20 @@ function statusBadge(status){
   const s=PROJECT_STATUSES[status]||PROJECT_STATUSES.in_de_maak;
   return '<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:'+s.color+'22;color:'+s.color+';border:1px solid '+s.color+'44">'+s.label+'</span>';
 }
+const PROJECT_STATUS_DISPLAY_ORDER=['in_de_maak','offerte_verstuurd','offerte_akkoord','in_te_plannen','uitgevoerd','offerte_geweigerd'];
+const STALE_DAYS=14;
+const STALE_EXCLUDED_STATUSES=['offerte_geweigerd','uitgevoerd'];
+function touchProjectActivity(proj){proj.statusChangedAt=new Date().toISOString();return proj;}
+function isProjectStale(proj){
+  if(STALE_EXCLUDED_STATUSES.includes(proj.status))return false;
+  if(!proj.statusChangedAt)return false;
+  return (Date.now()-new Date(proj.statusChangedAt).getTime())/(1000*60*60*24)>=STALE_DAYS;
+}
+function staleBadge(proj){
+  if(!isProjectStale(proj))return '';
+  const days=Math.floor((Date.now()-new Date(proj.statusChangedAt).getTime())/(1000*60*60*24));
+  return '<span title="Al '+days+' dagen niet aangepast — status nog correct?" style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;border:1px solid #fcd34d;cursor:default">⚠️ '+days+'d</span>';
+}
 
 function getLOGO_URI(){var el=document.getElementById('bw-logo-data');return el?(el.src||(el.src=el.dataset.src),el.src):'';}
 
@@ -14102,11 +14116,31 @@ function printKlantOfferte(){
 }
 function generateActiveOfferte(){
   if(window._activeOfferteTab==='klant'){
-    // Export klantofferte as PDF via print
     printKlantOfferte();
   } else {
     generateOfferte();
   }
+}
+function printInterneOfferte(){
+  var oc=document.getElementById('offerte-content');
+  if(!oc||!oc.innerHTML.trim()||oc.innerHTML.indexOf('Klik Genereer')>=0){
+    generateOfferte();
+  }
+  var oc2=document.getElementById('offerte-content');
+  if(!oc2)return;
+  var content=oc2.innerHTML;
+  var win=window.open('','_blank');
+  if(!win){alert('Pop-up geblokkeerd. Sta pop-ups toe voor deze pagina.');return;}
+  win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Interne offerte</title>'
+    +'<style>*{box-sizing:border-box}body{margin:0;padding:16mm;font-family:Arial,sans-serif;font-size:12px;color:#222}'
+    +'table{border-collapse:collapse;width:100%}th,td{padding:3px 6px}'
+    +'@media print{body{padding:10mm}.no-print{display:none}@page{margin:10mm;size:A4}}</style>'
+    +'</head><body>');
+  win.document.write(content);
+  win.document.write('</body></html>');
+  win.document.close();
+  win.focus();
+  setTimeout(function(){win.print();},500);
 }
 function generateOfferte(){
   applyCatalogPrices();
@@ -15624,7 +15658,14 @@ setTimeout(()=>updateNozzleList(), 200);
 
 
 // ── PROJECT STORAGE ──
-function getProjects(){try{return JSON.parse(localStorage.getItem('bp_projects')||'[]');}catch{return[];}}
+function getProjects(){
+  let ps;try{ps=JSON.parse(localStorage.getItem('bp_projects')||'[]');}catch{ps=[];}
+  // Initialiseer statusChangedAt voor bestaande projecten zonder dit veld
+  let changed=false;
+  ps.forEach(function(p){if(!p.statusChangedAt){p.statusChangedAt=new Date().toISOString();changed=true;}});
+  if(changed)localStorage.setItem('bp_projects',JSON.stringify(ps));
+  return ps;
+}
 function saveProjects(arr){localStorage.setItem('bp_projects',JSON.stringify(arr));autoSaveBundle();}
 
 // ── FORFAITAIRE BLOKKEN OPSLAG ──
@@ -15726,6 +15767,7 @@ function saveProjDetails(){
     btwnr:document.getElementById('pd-btwnr').value,
     opmerkingen:document.getElementById('pd-opmerking').value,
   };
+  touchProjectActivity(projs[idx]);
   saveProjects(projs);
   closeProjDetailsDlg();
   renderProjectPanel();
@@ -15819,7 +15861,16 @@ function renderKlantenTab(filter, search){
   // Sort alphabetically
   filtered.sort(function(a,b){return (a.naam||'').localeCompare(b.naam||'');});
 
-  let html='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">'
+  // Stale banner klanten tab
+  const allProjs=getProjects();
+  const staleKlantProjs=allProjs.filter(isProjectStale);
+  let html='';
+  if(staleKlantProjs.length){
+    html+='<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:12px">'
+      +'<span style="color:#b45309;font-weight:600">⚠️ '+staleKlantProjs.length+' project'+(staleKlantProjs.length>1?'en':'')+' al meer dan '+STALE_DAYS+' dagen niet aangepast</span>'
+      +'</div>';
+  }
+  html+='<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">'
     +'<input type="text" id="klant-search" placeholder="🔍 Zoek op naam, gemeente, mail..." value="'+(search||'')+'" oninput="renderKlantenTab(currentKlantFilter(),this.value)" style="flex:1;min-width:160px;padding:6px 10px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;background:var(--sur);color:var(--tx)">'
     +'<button class="ub'+(filter==='inplannen'?' on':'')+'" style="font-size:11px" onclick="setKlantFilter(this,\'inplannen\')">📅 In te plannen</button>'
     +'<button class="ub'+(filter==='zomer'?' on':'')+'" style="font-size:11px" onclick="setKlantFilter(this,\'zomer\')">☀ Zomer</button>'
@@ -15852,6 +15903,7 @@ function renderKlantenTab(filter, search){
         return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">'
           +'<span style="cursor:pointer;text-decoration:underline;color:var(--bl);font-size:11px" data-pid="'+p.id+'" onclick="openProjectFromKlant(this)">'+p.name+'</span>'
           +'<select data-pid="'+p.id+'" onchange="updateProjectStatus(this)" style="font-size:10px;padding:2px 4px;border:1px solid var(--bor2);border-radius:4px;background:var(--sur);color:var(--tx);cursor:pointer">'+statOpts+'</select>'
+          +staleBadge(p)
           +'</div>';
       }).join('')+'</div>':'')
         +'</div>'
@@ -15874,6 +15926,7 @@ function updateProjectStatus(sel){
   const idx=projs.findIndex(function(p){return p.id===pid;});
   if(idx<0)return;
   projs[idx].status=sel.value;
+  touchProjectActivity(projs[idx]);
   saveProjects(projs);
   showToast('Status bijgewerkt ✓','#16a34a');
 }
@@ -16208,8 +16261,17 @@ function renderProjectPanel(){
   if(!projs.length){
     html+='<div style="color:var(--tx2);font-size:12px;padding:14px 0;text-align:center">Nog geen projecten. Maak een nieuw project aan of importeer een JSON-bestand.</div>';
   } else {
-    html+='<div style="max-height:340px;overflow-y:auto">';
-    projs.forEach(p=>{
+    // Stale banner
+    const staleProjs=projs.filter(isProjectStale);
+    const isStaleFilter=window._projStaleFilter||false;
+    if(staleProjs.length){
+      html+='<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:12px">'
+        +'<span style="color:#b45309;font-weight:600">\u26a0\ufe0f '+staleProjs.length+' project'+(staleProjs.length>1?'en':'')+' al meer dan '+STALE_DAYS+' dagen niet aangepast</span>'
+        +'<button onclick="window._projStaleFilter='+(!isStaleFilter)+';renderProjectPanel()" style="padding:2px 10px;border-radius:12px;border:1px solid #f59e0b;background:'+(isStaleFilter?'#b45309':'#fff')+';color:'+(isStaleFilter?'#fff':'#b45309')+';font-size:11px;cursor:pointer;font-weight:600">'+(isStaleFilter?'Toon alles':'Bekijk')+'</button>'
+        +'</div>';
+    } else { window._projStaleFilter=false; }
+
+    function projKaart(p){
       const isActive=p.id===activeProjectId;
       const savedDate=p.savedAt?new Date(p.savedAt):null;
       const isVandaag=savedDate&&savedDate.toDateString()===new Date().toDateString();
@@ -16217,28 +16279,42 @@ function renderProjectPanel(){
       const elCount=(p.data?.elements||[]).length,pipeCount=(p.data?.pipes||[]).length;
       const klantNaam=p.klant&&p.klant.naam?p.klant.naam:'';
       const klantGem=p.klant&&p.klant.gemeente?p.klant.gemeente:'';
-      html+=`<div style="border-radius:var(--r);border:1px solid ${isActive?'var(--bl)':'var(--bor)'};background:${isActive?'var(--bl2)':'var(--sur)'};margin-bottom:6px;overflow:hidden">
+      return `<div style="border-radius:var(--r);border:1px solid ${isActive?'var(--bl)':'var(--bor)'};background:${isActive?'var(--bl2)':'var(--sur)'};margin-bottom:6px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:7px;padding:8px 10px">
           <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:13px;color:${isActive?'var(--bl)':'var(--tx)'}">${p.name}${isActive?' ✓':''}</span><button onclick="hernoemProject('${p.id}',this)" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--tx2);padding:0 2px;opacity:0.5;line-height:1" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" title="Naam wijzigen">✏️</button></div>
-            <div style="font-size:11px;color:var(--tx2);margin-top:1px">${klantNaam?klantNaam+(klantGem?' · '+klantGem:''):'Geen klant gekoppeld'}</div>
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:13px;color:${isActive?'var(--bl)':'var(--tx)'}">${p.name}${isActive?' \u2713':''}</span><button onclick="hernoemProject('${p.id}',this)" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--tx2);padding:0 2px;opacity:0.5;line-height:1" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" title="Naam wijzigen">\u270f\ufe0f</button></div>
+            <div style="font-size:11px;color:var(--tx2);margin-top:1px">${klantNaam?klantNaam+(klantGem?' \u00b7 '+klantGem:''):'Geen klant gekoppeld'}</div>
             <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
               ${statusBadge(p.status||'in_de_maak')}
-              <span style="font-size:10px;color:var(--tx2)">${dateStr} · ${elCount} el · ${pipeCount} leid</span>
+              ${staleBadge(p)}
+              <span style="font-size:10px;color:var(--tx2)">${dateStr} \u00b7 ${elCount} el \u00b7 ${pipeCount} leid</span>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:3px">
             <div style="display:flex;gap:3px">
               <button class="ub" style="font-size:11px;padding:3px 8px" onclick="openProject('${p.id}')">Openen</button>
               <button class="ub" style="font-size:11px;padding:3px 8px" onclick="saveToProject('${p.id}')">Opslaan</button>
-              <button class="ub" style="font-size:11px;padding:3px 8px" onclick="exportProjectJSON('${p.id}')">⬇</button>
-              <button class="ub" style="font-size:11px;padding:3px 8px;color:#b01020" onclick="deleteProject('${p.id}')">✕</button>
+              <button class="ub" style="font-size:11px;padding:3px 8px" onclick="exportProjectJSON('${p.id}')">\u2b07</button>
+              <button class="ub" style="font-size:11px;padding:3px 8px;color:#b01020" onclick="deleteProject('${p.id}')">\u2715</button>
             </div>
-            <button class="ub" style="font-size:11px;padding:3px 8px;width:100%;text-align:center" onclick="openProjectDetails('${p.id}')">✏ Klant & status</button>
+            <button class="ub" style="font-size:11px;padding:3px 8px;width:100%;text-align:center" onclick="openProjectDetails('${p.id}')">\u270f Klant & status</button>
           </div>
         </div>
       </div>`;
-    });
+    }
+
+    html+='<div style="max-height:400px;overflow-y:auto">';
+    if(isStaleFilter){
+      staleProjs.forEach(p=>{html+=projKaart(p);});
+    } else {
+      PROJECT_STATUS_DISPLAY_ORDER.forEach(function(statusKey){
+        const groep=projs.filter(p=>(p.status||'in_de_maak')===statusKey);
+        if(!groep.length)return;
+        const sc=PROJECT_STATUSES[statusKey];
+        html+='<div style="font-size:11px;font-weight:700;color:'+sc.color+';margin:8px 0 4px;padding:2px 0;border-bottom:1px solid '+sc.color+'33">'+sc.label+' ('+groep.length+')</div>';
+        groep.forEach(p=>{html+=projKaart(p);});
+      });
+    }
     html+='</div>';
   }
   html+=`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bor);display:flex;gap:8px;align-items:center">
@@ -16331,12 +16407,15 @@ function newProject(){
   const name=document.getElementById('new-proj-name').value.trim()||'Nieuw project';
   const projs=getProjects();
   const id='p_'+Date.now();
-  projs.unshift({id,name,savedAt:new Date().toISOString(),data:currentProjectData()});
+  const np={id,name,savedAt:new Date().toISOString(),data:currentProjectData()};
+  touchProjectActivity(np);
+  projs.unshift(np);
   saveProjects(projs);activeProjectId=id;renderProjectPanel();
 }
 function saveToProject(id){
   const projs=getProjects();const idx=projs.findIndex(p=>p.id===id);if(idx<0)return;
   projs[idx].data=currentProjectData();projs[idx].savedAt=new Date().toISOString();
+  touchProjectActivity(projs[idx]);
   saveProjects(projs);activeProjectId=id;renderProjectPanel();
   let t=document.getElementById('save-toast');
   if(!t){t=document.createElement('div');t.id='save-toast';
@@ -17439,6 +17518,7 @@ document.addEventListener('keydown',e=>{
     <input type="text" id="off-contactpersoon" placeholder="Contactpersoon" style="padding:5px 8px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;width:140px;background:var(--sur);color:var(--tx)" oninput="try{localStorage.setItem('bww_contactpersoon',this.value);}catch(e){}">
     <input type="date" id="off-datum" style="padding:5px 8px;border:1px solid var(--bor2);border-radius:var(--r);font-size:12px;background:var(--sur);color:var(--tx)">
     <button class="ub pri" onclick="generateActiveOfferte()">Genereer offerte</button>
+    <button class="ub" onclick="printInterneOfferte()" id="btn-print-intern" title="Afdrukken / PDF opslaan">🖨 Afdrukken</button>
     <button class="ub" onclick="showPlanPreview(true)" title="Preview conceptplan">🗺 Conceptplan</button>
     <button class="ub" onclick="showPlanPreview(false)" title="Preview finaal plan">🗺 Finaal plan</button>
     <button id="btn-installatiegids-export" class="ub" onclick="showInstallatiegids()" title="Genereer en preview installatiegids">📋 Installatiegids</button>
@@ -18153,9 +18233,10 @@ var CHANGELOG = {
   149: ['💬 Feedbackknop: meld een bug, stel een vraag of doe een suggestie rechtstreeks vanuit de app', '🆕 Wat is nieuw: overzicht van recente updates bij elke nieuwe versie'],
   148: ['🏢 Bedrijfsprofiel: sla je gegevens op en pas ze aan via Projecten → Bedrijfsprofiel bewerken', '💾 Bedrijfsprofiel wordt automatisch meegesaved in het .bws instellingenbestand', '⚠ Waarschuwing bij onvolledig profiel bij genereren van offerte of installatiegids'],
   146: ['💾 Kabels worden correct meegesaved in de bundel (.bwb)', '⏱ Auto-save: wijzigingen worden automatisch opgeslagen binnen 30 seconden'],
+  166: ['📋 Projectoverzicht gegroepeerd per status: In de maak, Offerte verstuurd, Akkoord, In te plannen, Uitgevoerd, Geweigerd', '⚠️ Stale-melding: projecten die meer dan 14 dagen niet aangepast werden krijgen een waarschuwingsbadge', '🖨 Interne offerte afdrukken: nieuwe knop om de interne offerte (met prijzen) te printen of op te slaan als PDF'],
   145: ['🔧 Sproeier-eigenschappen (body/nozzle) worden correct gesynchroniseerd tussen zones']
 };
-var HUIDIG_VERSIE = 165;
+var HUIDIG_VERSIE = 166;
 
 function changelogSluiten(){
   document.getElementById('bw-changelog-modal').style.display='none';
